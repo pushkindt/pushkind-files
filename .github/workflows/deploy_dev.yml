@@ -45,5 +45,4 @@ jobs:
           scp ./target/release/pushkind-files cicd@images.pushkind.com:/var/www4/html/
           scp -r ./assets/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./templates/ cicd@images.pushkind.com:/var/www4/html/
-          scp -r ./migrations/ cicd@images.pushkind.com:/var/www4/html/
           ssh cicd@images.pushkind.com "cd /var/www4/html/ && supervisorctl start files"
