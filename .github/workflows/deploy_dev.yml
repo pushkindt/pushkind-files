@@ -42,7 +42,7 @@ jobs:
       - name: Deploy
         run: |
           ssh cicd@images.pushkind.com "supervisorctl stop files"
-          scp ./target/release/pushkind-auth cicd@images.pushkind.com:/var/www4/html/
+          scp ./target/release/pushkind-files cicd@images.pushkind.com:/var/www4/html/
           scp -r ./assets/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./templates/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./migrations/ cicd@images.pushkind.com:/var/www4/html/
