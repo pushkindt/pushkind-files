@@ -60,6 +60,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(Files::new("/upload", "./upload"))
+            .service(Files::new("/assets", "./assets"))
             .service(not_assigned)
             .service(
                 web::scope("")
