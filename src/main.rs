@@ -11,7 +11,7 @@ use log::error;
 
 use pushkind_files::middleware::RedirectUnauthorized;
 use pushkind_files::models::config::ServerConfig;
-use pushkind_files::routes::main::{index, logout, not_assigned};
+use pushkind_files::routes::main::{index, logout, not_assigned, upload_image};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -59,14 +59,15 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
-            .service(Files::new("/upload", "./upload"))
+            .service(Files::new("/upload", pushkind_files::UPLOAD_PATH))
             .service(Files::new("/assets", "./assets"))
             .service(not_assigned)
             .service(
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
-                    .service(logout),
+                    .service(logout)
+                    .service(upload_image),
             )
             .app_data(web::Data::new(server_config.clone()))
     })

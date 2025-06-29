@@ -4,8 +4,33 @@
 {% block content %}
     {% include 'navigation.html' %}
 
-    <div class="container">
-        <h1>Файлы тут<h1>
+    <div class="container my-2">
+        <form action="/upload_image" method="POST" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col">
+                    <input class="form-control" type="file" name="image" accept="image/*" required>
+                </div>
+                <div class="col-auto text-end">
+                    <button class="btn btn-primary text-white" id="submit-button">
+                        Загрузить
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div class="row justify-content-md-center my-2">
+            <div class="col-6">
+                <ul class="list-group list-group-flush">
+                    {% for entry in entries | default(value=[]) %}
+                        <li class="list-group-item">
+                            <img width="64" height="64" src="/upload/{{current_user.hub_id}}/{{entry | urlencode}}" class="file-icon">
+                            <a href="/upload/{{current_user.hub_id}}/{{entry | urlencode}}">
+                                {{entry}}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
 
 {% endblock %}
