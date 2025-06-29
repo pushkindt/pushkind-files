@@ -2,19 +2,21 @@ use std::path::Path;
 
 use actix_identity::Identity;
 use actix_multipart::form::MultipartForm;
-use actix_web::{HttpResponse, Responder, get, post};
+use actix_web::{HttpResponse, Responder, get, post, web};
 use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
 use tera::Context;
 use uuid::Uuid;
 
 use crate::forms::main::UploadFileForm;
 use crate::models::auth::AuthenticatedUser;
+use crate::models::config::ServerConfig;
 use crate::routes::{alert_level_to_str, ensure_role, redirect, render_template};
 
 #[get("/")]
 pub async fn index(
     user: AuthenticatedUser,
     flash_messages: IncomingFlashMessages,
+    server_config: web::Data<ServerConfig>,
 ) -> impl Responder {
     if let Err(response) = ensure_role(&user, "files", Some("/na")) {
         return response;
@@ -28,6 +30,7 @@ pub async fn index(
     context.insert("alerts", &alerts);
     context.insert("current_user", &user);
     context.insert("current_page", "index");
+    context.insert("home_url", &server_config.auth_service_url);
 
     let hub_upload_path = Path::new(crate::UPLOAD_PATH).join(format!("{}/", &user.hub_id));
 
@@ -63,6 +66,7 @@ pub async fn logout(user: Identity) -> impl Responder {
 pub async fn not_assigned(
     user: AuthenticatedUser,
     flash_messages: IncomingFlashMessages,
+    server_config: web::Data<ServerConfig>,
 ) -> impl Responder {
     let alerts = flash_messages
         .iter()
@@ -72,6 +76,7 @@ pub async fn not_assigned(
     context.insert("alerts", &alerts);
     context.insert("current_user", &user);
     context.insert("current_page", "index");
+    context.insert("home_url", &server_config.auth_service_url);
 
     render_template("main/not_assigned.html", &context)
 }
