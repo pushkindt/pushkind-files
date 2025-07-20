@@ -8,7 +8,7 @@ pub mod routes;
 pub const UPLOAD_PATH: &str = "./upload/";
 
 /// Returns `None` if the path is invalid (e.g., contains `..`)
-/// Trims leading slash
+/// Trims leading slashes
 fn sanitize_path(input: &str) -> Option<PathBuf> {
     let trimmed = input.trim_start_matches('/');
     let path = Path::new(trimmed);
