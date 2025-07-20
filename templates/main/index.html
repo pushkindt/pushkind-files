@@ -81,14 +81,21 @@
                 {% else %}
                     <!-- File -->
                     <div class="col">
-                        <a href="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="card-link" download>
+                        <a href="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="card-link" download>
                         <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
                             {% if entry.is_image %}
-                                <img src="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
+                                <img src="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
                             {% else %}
                                 <div class="file-icon mb-2">📄</div>
                             {% endif %}
-                            <div>{{entry.name}}</div>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
+                                    {{ entry.name }}
+                                </div>
+                                <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" title="Copy link">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                         </div>
                         </a>
                     </div>
@@ -101,7 +108,7 @@
     <!-- New Folder Modal -->
     <div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="newFolderForm" class="modal-content" action="/folder/create" method="POST">
+            <form id="newFolderForm" class="modal-content" action="/folder/create?path={{path | urlencode}}" method="POST">
                 <div class="modal-header">
                     <h5 class="modal-title" id="newFolderModalLabel">Создать Новую Папку</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -190,6 +197,30 @@
                 });
             }
         }
+
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".copy-btn")) {
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const btn = e.target.closest(".copy-btn");
+                const url = btn.dataset.url;
+                const fullUrl = location.origin + url;
+
+                navigator.clipboard.writeText(fullUrl)
+                .then(() => {
+                    btn.innerHTML = '<i class="bi bi-clipboard-check text-success"></i>';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error("Copy failed:", err);
+                    alert("Failed to copy link");
+                });
+            }
+        });
     </script>
 
 {% endblock %}
