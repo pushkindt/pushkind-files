@@ -21,7 +21,6 @@ lazy_static! {
     };
 }
 
-
 fn alert_level_to_str(level: &Level) -> &'static str {
     match level {
         Level::Error => "danger",
