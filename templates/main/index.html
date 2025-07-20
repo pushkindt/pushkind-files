@@ -101,7 +101,7 @@
     <!-- New Folder Modal -->
     <div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="newFolderForm" class="modal-content" action="/folder/create" method="POST">
+            <form id="newFolderForm" class="modal-content" action="/folder/create?path={{path | urlencode}}" method="POST">
                 <div class="modal-header">
                     <h5 class="modal-title" id="newFolderModalLabel">Создать Новую Папку</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
