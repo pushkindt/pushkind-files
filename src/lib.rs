@@ -5,7 +5,7 @@ pub mod middleware;
 pub mod models;
 pub mod routes;
 
-pub const UPLOAD_PATH: &'static str = "./upload/";
+pub const UPLOAD_PATH: &str = "./upload/";
 
 /// Returns `None` if the path is invalid (e.g., contains `..`)
 fn sanitize_path(input: &str) -> Option<PathBuf> {
