@@ -88,7 +88,12 @@
                             {% else %}
                                 <div class="file-icon mb-2">📄</div>
                             {% endif %}
-                            <div>{{entry.name}}</div>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <span>{{ entry.name }}</span>
+                                <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" title="Copy link">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                         </div>
                         </a>
                     </div>
@@ -190,6 +195,30 @@
                 });
             }
         }
+
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".copy-btn")) {
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const btn = e.target.closest(".copy-btn");
+                const url = btn.dataset.url;
+                const fullUrl = location.origin + url;
+
+                navigator.clipboard.writeText(fullUrl)
+                .then(() => {
+                    btn.innerHTML = '<i class="bi bi-clipboard-check text-success"></i>';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error("Copy failed:", err);
+                    alert("Failed to copy link");
+                });
+            }
+        });
     </script>
 
 {% endblock %}
