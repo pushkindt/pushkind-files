@@ -89,7 +89,9 @@
                                 <div class="file-icon mb-2">📄</div>
                             {% endif %}
                             <div class="d-flex justify-content-center align-items-center gap-2">
-                                <span>{{ entry.name }}</span>
+                                <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
+                                    {{ entry.name }}
+                                </div>
                                 <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" title="Copy link">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
