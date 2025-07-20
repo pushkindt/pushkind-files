@@ -7,8 +7,8 @@ pub mod routes;
 
 pub const UPLOAD_PATH: &str = "./upload/";
 
-/// Returns `None` if the path is invalid (e.g., contains `..`)
-/// Trims leading slash
+/// Returns `None` if the path is invalid (e.g., contains `..`).
+/// Trims leading slash.
 fn sanitize_path(input: &str) -> Option<PathBuf> {
     let trimmed = input.trim_start_matches('/');
     let path = Path::new(trimmed);
@@ -24,6 +24,7 @@ fn sanitize_path(input: &str) -> Option<PathBuf> {
     Some(path.to_path_buf())
 }
 
+/// Returns `true` if the provided file name has a common image extension.
 fn is_image_file(name: &str) -> bool {
     Path::new(name)
         .extension()
@@ -35,4 +36,40 @@ fn is_image_file(name: &str) -> bool {
             )
         })
         .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn sanitize_path_valid() {
+        let path = sanitize_path("folder/sub").expect("valid path");
+        assert_eq!(path, Path::new("folder/sub"));
+    }
+
+    #[test]
+    fn sanitize_path_invalid_parent() {
+        assert!(sanitize_path("../secret").is_none());
+        assert!(sanitize_path("folder/../secret").is_none());
+    }
+
+    #[test]
+    fn sanitize_path_leading_slash() {
+        let path = sanitize_path("/leading/path").expect("valid path");
+        assert_eq!(path, Path::new("leading/path"));
+    }
+
+    #[test]
+    fn is_image_file_positive() {
+        assert!(is_image_file("photo.JPG"));
+        assert!(is_image_file("image.png"));
+    }
+
+    #[test]
+    fn is_image_file_negative() {
+        assert!(!is_image_file("document.txt"));
+        assert!(!is_image_file("noextension"));
+    }
 }
