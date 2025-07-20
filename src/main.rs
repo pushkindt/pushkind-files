@@ -11,7 +11,7 @@ use log::error;
 
 use pushkind_files::middleware::RedirectUnauthorized;
 use pushkind_files::models::config::ServerConfig;
-use pushkind_files::routes::main::{create_folder, index, logout, not_assigned, upload_image};
+use pushkind_files::routes::main::{create_folder, index, logout, not_assigned, upload_files};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -67,7 +67,7 @@ async fn main() -> std::io::Result<()> {
                     .wrap(RedirectUnauthorized)
                     .service(index)
                     .service(logout)
-                    .service(upload_image)
+                    .service(upload_files)
                     .service(create_folder),
             )
             .app_data(web::Data::new(server_config.clone()))

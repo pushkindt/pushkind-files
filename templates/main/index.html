@@ -54,38 +54,46 @@
         </div>
 
 
-        <form action='/upload_image?path={{ path }}' method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="path" required value='{{ path }}'>
-            <div class="row">
-                <div class="col">
-                    <input class="form-control" type="file" name="image" accept="image/*" required>
-                </div>
-                <div class="col-auto text-end">
-                    <button class="btn btn-primary text-white" id="submit-button">
-                        Загрузить
-                    </button>
-                </div>
-            </div>
-        </form>
-        <div class="row justify-content-md-center my-2">
-            <div class="col-6">
-                <ul class="list-group list-group-flush">
-                    {% for entry in entries | default(value=[]) %}
-                        <li class="list-group-item">
-                            {% if entry.is_directory %}
-                                <a href="/?path={{path}}/{{entry.name | urlencode}}">
-                                    {{entry.name}}
-                                </a>
+        <div id="dropzone" class="dropzone">
+            Перетащите файлы или
+            <label class="text-primary" style="cursor:pointer;">
+                <u>кликните для загрузки</u>
+                <input type="file" multiple hidden id="fileInput">
+            </label>
+        </div>
+
+
+        <!-- Folder and File Grid -->
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-4">
+            {% for entry in entries | default(value=[]) %}
+
+                {% if entry.is_directory %}
+                    <!-- Folder -->
+                    <div class="col">
+                        <a href="/?path={{path}}/{{entry.name | urlencode}}" class="card-link">
+                        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
+                            <div class="file-icon folder-icon mb-2">📁</div>
+                            <div>{{entry.name}}</div>
+                        </div>
+                        </a>
+                    </div>
+                {% else %}
+                    <!-- File -->
+                    <div class="col">
+                        <a href="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="card-link" download>
+                        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
+                            {% if entry.is_image %}
+                                <img src="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
                             {% else %}
-                                <img width="64" height="64" src="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="file-icon">
-                                <a href="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}">
-                                    {{entry.name}}
-                                </a>
+                                <div class="file-icon mb-2">📄</div>
                             {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
+                            <div>{{entry.name}}</div>
+                        </div>
+                        </a>
+                    </div>
+                {% endif %}
+
+            {% endfor %}
         </div>
     </div>
 
@@ -107,5 +115,56 @@
             </form>
         </div>
     </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script>
+        const dropzone = document.getElementById("dropzone");
+        const fileInput = document.getElementById("fileInput");
+
+        dropzone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropzone.classList.add("dragover");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.classList.remove("dragover");
+        });
+
+        dropzone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropzone.classList.remove("dragover");
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener("change", (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                fetch("/files/upload?path={{path}}", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error(`Не удалось загрузить ${file.name}.`);
+                    return res.text();
+                })
+                .then(() => {
+                    showFlashMessage("Загрузка успешна.");
+                    setTimeout(function () {
+                        location.reload();
+                    }, 3000);
+                })
+                .catch(err => showFlashMessage("Ошибка загрузки: " + err.message, "danger"));
+            }
+        }
+    </script>
 
 {% endblock %}

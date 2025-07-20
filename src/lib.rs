@@ -22,3 +22,16 @@ fn sanitize_path(input: &str) -> Option<PathBuf> {
 
     Some(path.to_path_buf())
 }
+
+fn is_image_file(name: &str) -> bool {
+    Path::new(name)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| {
+            matches!(
+                ext.to_ascii_lowercase().as_str(),
+                "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "svg"
+            )
+        })
+        .unwrap_or(false)
+}

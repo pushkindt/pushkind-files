@@ -13,7 +13,7 @@ use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::models::auth::AuthenticatedUser;
 use crate::models::config::ServerConfig;
 use crate::routes::{alert_level_to_str, ensure_role, redirect, render_template};
-use crate::sanitize_path;
+use crate::{is_image_file, sanitize_path};
 
 #[derive(Deserialize)]
 struct IndexQueryParams {
@@ -24,6 +24,7 @@ struct IndexQueryParams {
 struct FileEntry {
     name: String,
     is_directory: bool,
+    is_image: bool,
 }
 
 #[get("/")]
@@ -72,7 +73,12 @@ pub async fn index(
                 let file_type = entry.file_type().ok();
                 let is_directory = file_type.map(|ft| ft.is_dir()).unwrap_or(false);
                 let name = entry.file_name().to_string_lossy().to_string();
-                FileEntry { name, is_directory }
+                let is_image = !is_directory && is_image_file(&name);
+                FileEntry {
+                    name,
+                    is_directory,
+                    is_image,
+                }
             })
             .collect(),
         Err(err) => {
@@ -80,7 +86,13 @@ pub async fn index(
             vec![]
         }
     };
-    entries.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    entries.sort_by(|a, b| {
+        match (a.is_directory, b.is_directory) {
+            (true, false) => std::cmp::Ordering::Less, // Folders before files
+            (false, true) => std::cmp::Ordering::Greater, // Files after folders
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()), // Alphabetical
+        }
+    });
 
     context.insert("entries", &entries);
     context.insert("path", &sanitized_path);
@@ -113,14 +125,14 @@ pub async fn not_assigned(
     render_template("main/not_assigned.html", &context)
 }
 
-#[post("/upload_image")]
-pub async fn upload_image(
+#[post("/files/upload")]
+pub async fn upload_files(
     params: web::Query<IndexQueryParams>,
     user: AuthenticatedUser,
     MultipartForm(form): MultipartForm<UploadFileForm>,
 ) -> impl Responder {
     let file_name = form
-        .image
+        .file
         .file_name
         .unwrap_or_else(|| format!("upload-{}", Uuid::new_v4()));
 
@@ -150,7 +162,7 @@ pub async fn upload_image(
     // Save file to path
     let filepath = target_dir.join(file_name);
 
-    match form.image.file.persist(filepath) {
+    match form.file.file.persist(filepath) {
         Ok(_) => FlashMessage::success("Файл успешно загружен.").send(),
         Err(e) => {
             log::error!("File upload error: {:?}", e);
@@ -158,10 +170,7 @@ pub async fn upload_image(
         }
     }
 
-    redirect(&format!(
-        "/?path={}",
-        params.path.clone().unwrap_or_default()
-    ))
+    HttpResponse::Ok().finish()
 }
 
 #[post("/folder/create")]
