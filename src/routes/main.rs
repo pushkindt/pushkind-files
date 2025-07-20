@@ -9,7 +9,7 @@ use serde::Deserialize;
 use tera::Context;
 use uuid::Uuid;
 
-use crate::forms::main::UploadFileForm;
+use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::models::auth::AuthenticatedUser;
 use crate::models::config::ServerConfig;
 use crate::routes::{alert_level_to_str, ensure_role, redirect, render_template};
@@ -49,11 +49,11 @@ pub async fn index(
     context.insert("home_url", &server_config.auth_service_url);
 
     // Sanitize and validate the path
-    let path_param = params.path.as_deref().unwrap_or("/");
-    let sanitized_path = sanitize_path(path_param);
-    if sanitized_path.is_none() {
-        return HttpResponse::BadRequest().body("Invalid path");
-    }
+    let path_param = params.path.as_deref().unwrap_or("");
+    let sanitized_path = match sanitize_path(path_param) {
+        Some(sanitized_path) => sanitized_path,
+        None => return HttpResponse::BadRequest().body("Invalid path"),
+    };
 
     // Construct the full path to the hub directory
     let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
@@ -62,7 +62,7 @@ pub async fn index(
         return HttpResponse::InternalServerError().finish();
     }
 
-    let target_path = base_path.join(sanitized_path.unwrap());
+    let target_path = base_path.join(&sanitized_path);
 
     // Read entries
     let mut entries: Vec<FileEntry> = match fs::read_dir(&target_path) {
@@ -83,7 +83,7 @@ pub async fn index(
     entries.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
     context.insert("entries", &entries);
-    context.insert("path", path_param);
+    context.insert("path", &sanitized_path);
 
     render_template("main/index.html", &context)
 }
@@ -157,6 +157,51 @@ pub async fn upload_image(
             FlashMessage::error("Ошибка при загрузке файла.").send();
         }
     }
+
+    redirect(&format!(
+        "/?path={}",
+        params.path.clone().unwrap_or_default()
+    ))
+}
+
+#[post("/folder/create")]
+pub async fn create_folder(
+    params: web::Query<IndexQueryParams>,
+    user: AuthenticatedUser,
+    web::Form(form): web::Form<CreateFolderForm>,
+) -> impl Responder {
+    // Base directory: ./upload/{hub_id}
+    let base_path = Path::new(crate::UPLOAD_PATH).join(&user.hub_id.to_string());
+
+    // Sanitize path parameter to prevent directory traversal
+    let sanitized_path = match params.path.as_deref() {
+        Some(p) => match sanitize_path(p) {
+            Some(p) => p,
+            None => {
+                FlashMessage::error("Недопустимый путь для загрузки файла.").send();
+                return redirect("/");
+            }
+        },
+        None => PathBuf::new(),
+    };
+
+    let new_path = match sanitize_path(&form.name) {
+        Some(p) => p,
+        None => {
+            FlashMessage::error("Недопустимый путь для загрузки файла.").send();
+            return redirect("/");
+        }
+    };
+
+    // Final upload directory
+    let target_dir = base_path.join(sanitized_path).join(new_path);
+
+    if let Err(e) = std::fs::create_dir_all(&target_dir) {
+        log::error!("Failed to create upload directory: {:?}", e);
+        return HttpResponse::InternalServerError().finish();
+    }
+
+    FlashMessage::success("Папка успешно создана.").send();
 
     redirect(&format!(
         "/?path={}",
