@@ -5,7 +5,8 @@
     {% include 'navigation.html' %}
 
     <div class="container my-2">
-        <form action="/upload_image" method="POST" enctype="multipart/form-data">
+        <form action='/upload_image?path={{ path }}' method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="path" required value='{{ path }}'>
             <div class="row">
                 <div class="col">
                     <input class="form-control" type="file" name="image" accept="image/*" required>
@@ -22,10 +23,16 @@
                 <ul class="list-group list-group-flush">
                     {% for entry in entries | default(value=[]) %}
                         <li class="list-group-item">
-                            <img width="64" height="64" src="/upload/{{current_user.hub_id}}/{{entry | urlencode}}" class="file-icon">
-                            <a href="/upload/{{current_user.hub_id}}/{{entry | urlencode}}">
-                                {{entry}}
-                            </a>
+                            {% if entry.is_directory %}
+                                <a href="/?path={{entry.name | urlencode}}">
+                                    {{entry.name}}
+                                </a>
+                            {% else %}
+                                <img width="64" height="64" src="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="file-icon">
+                                <a href="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}">
+                                    {{entry.name}}
+                                </a>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>

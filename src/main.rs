@@ -2,7 +2,6 @@ use std::env;
 
 use actix_files::Files;
 use actix_identity::IdentityMiddleware;
-use actix_session::config::CookieContentSecurity;
 use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 use actix_web::cookie::Key;
 use actix_web::{App, HttpServer, middleware, web};
