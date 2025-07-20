@@ -81,10 +81,10 @@
                 {% else %}
                     <!-- File -->
                     <div class="col">
-                        <a href="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="card-link" download>
+                        <a href="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="card-link" download>
                         <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
                             {% if entry.is_image %}
-                                <img src="/upload/{{current_user.hub_id}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
+                                <img src="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
                             {% else %}
                                 <div class="file-icon mb-2">📄</div>
                             {% endif %}
