@@ -5,9 +5,10 @@ pub mod middleware;
 pub mod models;
 pub mod routes;
 
-pub const UPLOAD_PATH: &'static str = "./upload/";
+pub const UPLOAD_PATH: &str = "./upload/";
 
 /// Returns `None` if the path is invalid (e.g., contains `..`)
+/// Trims leading slash
 fn sanitize_path(input: &str) -> Option<PathBuf> {
     let trimmed = input.trim_start_matches('/');
     let path = Path::new(trimmed);

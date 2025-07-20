@@ -59,7 +59,7 @@ pub async fn index(
     // Construct the full path to the hub directory
     let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
     if let Err(e) = fs::create_dir_all(&base_path) {
-        log::error!("Failed to create base path: {:?}", e);
+        log::error!("Failed to create base path: {e:?}");
         return HttpResponse::InternalServerError().finish();
     }
 
@@ -82,7 +82,7 @@ pub async fn index(
             })
             .collect(),
         Err(err) => {
-            log::warn!("Cannot read dir: {:?}: {}", target_path, err);
+            log::warn!("Cannot read dir: {target_path:?}: {err}");
             vec![]
         }
     };
@@ -137,7 +137,7 @@ pub async fn upload_files(
         .unwrap_or_else(|| format!("upload-{}", Uuid::new_v4()));
 
     // Base directory: ./upload/{hub_id}
-    let base_path = Path::new(crate::UPLOAD_PATH).join(&user.hub_id.to_string());
+    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
 
     // Sanitize path parameter to prevent directory traversal
     let sanitized_path = match params.path.as_deref() {
@@ -155,7 +155,7 @@ pub async fn upload_files(
     let target_dir = base_path.join(sanitized_path);
 
     if let Err(e) = std::fs::create_dir_all(&target_dir) {
-        log::error!("Failed to create upload directory: {:?}", e);
+        log::error!("Failed to create upload directory: {e:?}");
         return HttpResponse::InternalServerError().finish();
     }
 
@@ -165,7 +165,7 @@ pub async fn upload_files(
     match form.file.file.persist(filepath) {
         Ok(_) => FlashMessage::success("Файл успешно загружен.").send(),
         Err(e) => {
-            log::error!("File upload error: {:?}", e);
+            log::error!("File upload error: {e:?}");
             FlashMessage::error("Ошибка при загрузке файла.").send();
         }
     }
@@ -180,7 +180,7 @@ pub async fn create_folder(
     web::Form(form): web::Form<CreateFolderForm>,
 ) -> impl Responder {
     // Base directory: ./upload/{hub_id}
-    let base_path = Path::new(crate::UPLOAD_PATH).join(&user.hub_id.to_string());
+    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
 
     // Sanitize path parameter to prevent directory traversal
     let sanitized_path = match params.path.as_deref() {
@@ -206,7 +206,7 @@ pub async fn create_folder(
     let target_dir = base_path.join(sanitized_path).join(new_path);
 
     if let Err(e) = std::fs::create_dir_all(&target_dir) {
-        log::error!("Failed to create upload directory: {:?}", e);
+        log::error!("Failed to create upload directory: {e:?}");
         return HttpResponse::InternalServerError().finish();
     }
 

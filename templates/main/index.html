@@ -55,12 +55,13 @@
 
 
         <div id="dropzone" class="dropzone">
-            Перетащите файлы или
+            Перетащите файлы (не более 10МБ) или
             <label class="text-primary" style="cursor:pointer;">
                 <u>кликните для загрузки</u>
                 <input type="file" multiple hidden id="fileInput">
             </label>
         </div>
+        <div id="uploadProgressList" class="mb-4"></div>
 
 
         <!-- Folder and File Grid -->
@@ -70,7 +71,7 @@
                 {% if entry.is_directory %}
                     <!-- Folder -->
                     <div class="col">
-                        <a href="/?path={{path}}/{{entry.name | urlencode}}" class="card-link">
+                        <a href="/?path={{path | urlencode}}/{{entry.name | urlencode}}" class="card-link">
                         <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
                             <div class="file-icon folder-icon mb-2">📁</div>
                             <div>{{entry.name}}</div>
@@ -144,11 +145,25 @@
         });
 
         function handleFiles(files) {
+            const uploadList = document.getElementById("uploadProgressList");
+            uploadList.innerHTML = "";
+            let completed = 0;
+            dropzone.classList.add("d-none");
+            fileInput.disabled = true;
+
             for (const file of files) {
                 const formData = new FormData();
                 formData.append("file", file);
 
-                fetch("/files/upload?path={{path}}", {
+                const id = "upload_" + Math.random().toString(36).slice(2, 10);
+                uploadList.insertAdjacentHTML("beforeend", `
+                <div class="mb-2" id="${id}_wrapper">
+                    <div class="small mb-1">Uploading: ${file.name}</div>
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                </div>
+                `);
+
+                fetch("/files/upload?path={{path | urlencode}}", {
                     method: "POST",
                     body: formData
                 })
@@ -157,12 +172,22 @@
                     return res.text();
                 })
                 .then(() => {
-                    showFlashMessage("Загрузка успешна.");
-                    setTimeout(function () {
-                        location.reload();
-                    }, 3000);
+                    document.getElementById(`${id}_wrapper`).innerHTML = `
+                    ✅ Загружен: <strong>${file.name}</strong>
+                    `;
                 })
-                .catch(err => showFlashMessage("Ошибка загрузки: " + err.message, "danger"));
+                .catch(err => {
+                    document.getElementById(`${id}_wrapper`).innerHTML = `
+                    ❌ Ошибка загрузки <strong>${file.name}</strong>: ${err.message}
+                    `;
+                })
+                .finally(() => {
+                    completed++;
+                    if (completed === files.length) {
+                        // All files uploaded
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                });
             }
         }
     </script>
