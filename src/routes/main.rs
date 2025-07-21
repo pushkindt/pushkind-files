@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::routes::render_template;
-use crate::{is_image_file, sanitize_path};
+use crate::{is_image_file, sanitize_path, sanitize_file_name};
 
 #[derive(Deserialize)]
 struct IndexQueryParams {
@@ -125,10 +125,18 @@ pub async fn upload_files(
     user: AuthenticatedUser,
     MultipartForm(form): MultipartForm<UploadFileForm>,
 ) -> impl Responder {
-    let file_name = form
+    let raw_file_name = form
         .file
         .file_name
         .unwrap_or_else(|| format!("upload-{}", Uuid::new_v4()));
+
+    let file_name = match sanitize_file_name(&raw_file_name) {
+        Some(p) => p,
+        None => {
+            FlashMessage::error("Недопустимое имя файла.").send();
+            return redirect("/");
+        }
+    };
 
     // Base directory: ./upload/{hub_id}
     let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
