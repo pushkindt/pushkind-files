@@ -33,7 +33,7 @@
 
 
 {% block content %}
-    {% include 'navigation.html' %}
+    {% include 'components/navigation.html' %}
 
     <div class="container my-2">
 
@@ -67,62 +67,19 @@
         <!-- Folder and File Grid -->
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-4">
             {% for entry in entries | default(value=[]) %}
-
                 {% if entry.is_directory %}
                     <!-- Folder -->
-                    <div class="col">
-                        <a href="/?path={{path | urlencode}}/{{entry.name | urlencode}}" class="card-link">
-                        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-                            <div class="file-icon folder-icon mb-2">📁</div>
-                            <div>{{entry.name}}</div>
-                        </div>
-                        </a>
-                    </div>
+                    {% include 'components/folder.html' %}
                 {% else %}
                     <!-- File -->
-                    <div class="col">
-                        <a href="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="card-link" download>
-                        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-                            {% if entry.is_image %}
-                                <img src="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
-                            {% else %}
-                                <div class="file-icon mb-2">📄</div>
-                            {% endif %}
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
-                                    {{ entry.name }}
-                                </div>
-                                <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" title="Copy link">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                            </div>
-                        </div>
-                        </a>
-                    </div>
+                    {% include 'components/file.html' %}
                 {% endif %}
 
             {% endfor %}
         </div>
     </div>
 
-    <!-- New Folder Modal -->
-    <div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <form id="newFolderForm" class="modal-content" action="/folder/create?path={{path | urlencode}}" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="newFolderModalLabel">Создать Новую Папку</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <label for="folderName" class="form-label">Название</label>
-                    <input type="text" class="form-control" id="folderName" name="name" required />
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Создать</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    {% include 'main/new_folder_modal.html' %}
 
 {% endblock %}
 
@@ -164,10 +121,10 @@
 
                 const id = "upload_" + Math.random().toString(36).slice(2, 10);
                 uploadList.insertAdjacentHTML("beforeend", `
-                <div class="mb-2" id="${id}_wrapper">
-                    <div class="small mb-1">Uploading: ${file.name}</div>
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                </div>
+                    <div class="mb-2" id="${id}_wrapper">
+                        <div class="small mb-1">Uploading: ${file.name}</div>
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
                 `);
 
                 fetch("/files/upload?path={{path | urlencode}}", {
