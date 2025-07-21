@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::routes::render_template;
-use crate::{is_image_file, sanitize_path, sanitize_file_name};
+use crate::{is_image_file, sanitize_file_name, sanitize_path};
 
 #[derive(Deserialize)]
 struct IndexQueryParams {
@@ -133,8 +133,7 @@ pub async fn upload_files(
     let file_name = match sanitize_file_name(&raw_file_name) {
         Some(p) => p,
         None => {
-            FlashMessage::error("Недопустимое имя файла.").send();
-            return redirect("/");
+            return HttpResponse::BadRequest().body("Incorrect file name");
         }
     };
 
@@ -146,8 +145,7 @@ pub async fn upload_files(
         Some(p) => match sanitize_path(p) {
             Some(p) => p,
             None => {
-                FlashMessage::error("Недопустимый путь для загрузки файла.").send();
-                return redirect("/");
+                return HttpResponse::BadRequest().body("Incorrect path");
             }
         },
         None => PathBuf::new(),
@@ -168,7 +166,7 @@ pub async fn upload_files(
         Ok(_) => FlashMessage::success("Файл успешно загружен.").send(),
         Err(e) => {
             log::error!("File upload error: {e:?}");
-            FlashMessage::error("Ошибка при загрузке файла.").send();
+            return HttpResponse::InternalServerError().finish();
         }
     }
 
