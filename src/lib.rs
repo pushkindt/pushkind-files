@@ -22,6 +22,17 @@ fn sanitize_path(input: &str) -> Option<PathBuf> {
     Some(path.to_path_buf())
 }
 
+/// Sanitizes a file name ensuring it does not contain path separators
+/// or parent directory components.
+fn sanitize_file_name(input: &str) -> Option<PathBuf> {
+    let path = sanitize_path(input)?;
+    if path.components().count() == 1 {
+        Some(path)
+    } else {
+        None
+    }
+}
+
 /// Returns `true` if the provided file name has a common image extension.
 fn is_image_file(name: &str) -> bool {
     Path::new(name)
@@ -57,6 +68,18 @@ mod tests {
     fn sanitize_path_leading_slash() {
         let path = sanitize_path("/leading/path").expect("valid path");
         assert_eq!(path, Path::new("leading/path"));
+    }
+
+    #[test]
+    fn sanitize_file_name_single_component() {
+        let path = sanitize_file_name("image.png").expect("valid file name");
+        assert_eq!(path, Path::new("image.png"));
+    }
+
+    #[test]
+    fn sanitize_file_name_reject_nested() {
+        assert!(sanitize_file_name("../secret.txt").is_none());
+        assert!(sanitize_file_name("foo/bar.txt").is_none());
     }
 
     #[test]

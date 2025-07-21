@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::routes::render_template;
-use crate::{is_image_file, sanitize_path};
+use crate::{is_image_file, sanitize_file_name, sanitize_path};
 
 #[derive(Deserialize)]
 struct IndexQueryParams {
@@ -125,10 +125,17 @@ pub async fn upload_files(
     user: AuthenticatedUser,
     MultipartForm(form): MultipartForm<UploadFileForm>,
 ) -> impl Responder {
-    let file_name = form
+    let raw_file_name = form
         .file
         .file_name
         .unwrap_or_else(|| format!("upload-{}", Uuid::new_v4()));
+
+    let file_name = match sanitize_file_name(&raw_file_name) {
+        Some(p) => p,
+        None => {
+            return HttpResponse::BadRequest().body("Incorrect file name");
+        }
+    };
 
     // Base directory: ./upload/{hub_id}
     let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
@@ -138,8 +145,7 @@ pub async fn upload_files(
         Some(p) => match sanitize_path(p) {
             Some(p) => p,
             None => {
-                FlashMessage::error("Недопустимый путь для загрузки файла.").send();
-                return redirect("/");
+                return HttpResponse::BadRequest().body("Incorrect path");
             }
         },
         None => PathBuf::new(),
@@ -160,7 +166,7 @@ pub async fn upload_files(
         Ok(_) => FlashMessage::success("Файл успешно загружен.").send(),
         Err(e) => {
             log::error!("File upload error: {e:?}");
-            FlashMessage::error("Ошибка при загрузке файла.").send();
+            return HttpResponse::InternalServerError().finish();
         }
     }
 
