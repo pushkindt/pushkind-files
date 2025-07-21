@@ -1,18 +1,18 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use actix_identity::Identity;
 use actix_multipart::form::MultipartForm;
 use actix_web::{HttpResponse, Responder, get, post, web};
 use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
+use pushkind_common::models::auth::AuthenticatedUser;
+use pushkind_common::models::config::CommonServerConfig;
+use pushkind_common::routes::{alert_level_to_str, ensure_role, redirect};
 use serde::Deserialize;
 use tera::Context;
 use uuid::Uuid;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
-use crate::models::auth::AuthenticatedUser;
-use crate::models::config::ServerConfig;
-use crate::routes::{alert_level_to_str, ensure_role, redirect, render_template};
+use crate::routes::render_template;
 use crate::{is_image_file, sanitize_path};
 
 #[derive(Deserialize)]
@@ -32,7 +32,7 @@ pub async fn index(
     params: web::Query<IndexQueryParams>,
     user: AuthenticatedUser,
     flash_messages: IncomingFlashMessages,
-    server_config: web::Data<ServerConfig>,
+    server_config: web::Data<CommonServerConfig>,
 ) -> impl Responder {
     if let Err(response) = ensure_role(&user, "files", Some("/na")) {
         return response;
@@ -100,17 +100,11 @@ pub async fn index(
     render_template("main/index.html", &context)
 }
 
-#[post("/logout")]
-pub async fn logout(user: Identity) -> impl Responder {
-    user.logout();
-    redirect("/")
-}
-
 #[get("/na")]
 pub async fn not_assigned(
     user: AuthenticatedUser,
     flash_messages: IncomingFlashMessages,
-    server_config: web::Data<ServerConfig>,
+    server_config: web::Data<CommonServerConfig>,
 ) -> impl Responder {
     let alerts = flash_messages
         .iter()

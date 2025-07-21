@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 
 pub mod forms;
-pub mod middleware;
-pub mod models;
 pub mod routes;
 
 pub const UPLOAD_PATH: &str = "./upload/";
