@@ -10,6 +10,7 @@ use pushkind_common::routes::{alert_level_to_str, ensure_role, redirect};
 use serde::Deserialize;
 use tera::Context;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::routes::render_template;
@@ -125,6 +126,10 @@ pub async fn upload_files(
     user: AuthenticatedUser,
     MultipartForm(form): MultipartForm<UploadFileForm>,
 ) -> impl Responder {
+    if let Err(_) = ensure_role(&user, "files", None) {
+        return HttpResponse::Unauthorized().finish();
+    }
+
     let raw_file_name = form
         .file
         .file_name
@@ -179,6 +184,18 @@ pub async fn create_folder(
     user: AuthenticatedUser,
     web::Form(form): web::Form<CreateFolderForm>,
 ) -> impl Responder {
+    if let Err(response) = ensure_role(&user, "files", Some("/na")) {
+        return response;
+    }
+
+    if let Err(e) = form.validate() {
+        FlashMessage::error(format!("Ошибка валидации: {e:?}")).send();
+        return redirect(&format!(
+            "/?path={}",
+            params.path.clone().unwrap_or_default()
+        ));
+    }
+
     // Base directory: ./upload/{hub_id}
     let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
 
