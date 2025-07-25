@@ -189,7 +189,8 @@ pub async fn create_folder(
     }
 
     if let Err(e) = form.validate() {
-        FlashMessage::error(format!("Ошибка валидации: {e:?}")).send();
+        log::error!("Validation error: {e:?}");
+        FlashMessage::error("Ошибка валидации формы.").send();
         return redirect(&format!(
             "/?path={}",
             params.path.clone().unwrap_or_default()
