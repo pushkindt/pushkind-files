@@ -11,7 +11,9 @@ use pushkind_common::middleware::RedirectUnauthorized;
 use pushkind_common::models::config::CommonServerConfig;
 use pushkind_common::routes::logout;
 
-use pushkind_files::routes::main::{create_folder, index, not_assigned, upload_files};
+use pushkind_files::routes::main::{
+    create_folder, download_file, index, not_assigned, upload_files,
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -59,7 +61,6 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
-            .service(Files::new("/upload", pushkind_files::UPLOAD_PATH))
             .service(Files::new("/assets", "./assets"))
             .service(not_assigned)
             .service(
@@ -68,7 +69,8 @@ async fn main() -> std::io::Result<()> {
                     .service(index)
                     .service(logout)
                     .service(upload_files)
-                    .service(create_folder),
+                    .service(create_folder)
+                    .service(download_file),
             )
             .app_data(web::Data::new(server_config.clone()))
     })

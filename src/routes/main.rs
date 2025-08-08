@@ -1,8 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use actix_files::NamedFile;
 use actix_multipart::form::MultipartForm;
-use actix_web::{HttpResponse, Responder, get, post, web};
+use actix_web::{
+    HttpResponse, Responder,
+    error::{ErrorBadRequest, ErrorUnauthorized},
+    get, post, web,
+};
 use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
 use pushkind_common::models::auth::AuthenticatedUser;
 use pushkind_common::models::config::CommonServerConfig;
@@ -65,6 +70,9 @@ pub async fn index(
     }
 
     let target_path = base_path.join(&sanitized_path);
+    if !target_path.starts_with(&base_path) {
+        return HttpResponse::Unauthorized().finish();
+    }
 
     // Read entries
     let mut entries: Vec<FileEntry> = match fs::read_dir(&target_path) {
@@ -120,6 +128,24 @@ pub async fn not_assigned(
     render_template("main/not_assigned.html", &context)
 }
 
+#[get("/upload/{hub_id}/{path:.*}")]
+pub async fn download_file(
+    params: web::Path<(i32, String)>,
+    user: AuthenticatedUser,
+) -> actix_web::Result<NamedFile> {
+    let (hub_id, tail) = params.into_inner();
+    if hub_id != user.hub_id {
+        return Err(ErrorUnauthorized("invalid hub"));
+    }
+    let sanitized = sanitize_path(&tail).ok_or(ErrorBadRequest("Invalid path"))?;
+    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
+    let file_path = base_path.join(sanitized);
+    if !file_path.starts_with(&base_path) {
+        return Err(ErrorUnauthorized("invalid hub"));
+    }
+    Ok(NamedFile::open(file_path)?)
+}
+
 #[post("/files/upload")]
 pub async fn upload_files(
     params: web::Query<IndexQueryParams>,
@@ -158,6 +184,9 @@ pub async fn upload_files(
 
     // Final upload directory
     let target_dir = base_path.join(sanitized_path);
+    if !target_dir.starts_with(&base_path) {
+        return HttpResponse::Unauthorized().finish();
+    }
 
     if let Err(e) = std::fs::create_dir_all(&target_dir) {
         log::error!("Failed to create upload directory: {e:?}");
@@ -222,6 +251,9 @@ pub async fn create_folder(
 
     // Final upload directory
     let target_dir = base_path.join(sanitized_path).join(new_path);
+    if !target_dir.starts_with(&base_path) {
+        return HttpResponse::Unauthorized().finish();
+    }
 
     if let Err(e) = std::fs::create_dir_all(&target_dir) {
         log::error!("Failed to create upload directory: {e:?}");
