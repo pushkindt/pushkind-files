@@ -9,10 +9,10 @@ use actix_web_flash_messages::{FlashMessagesFramework, storage::CookieMessageSto
 use dotenvy::dotenv;
 use pushkind_common::middleware::RedirectUnauthorized;
 use pushkind_common::models::config::CommonServerConfig;
-use pushkind_common::routes::logout;
+use pushkind_common::routes::{logout, not_assigned};
 use tera::Tera;
 
-use pushkind_files::routes::main::{create_folder, index, not_assigned, upload_files};
+use pushkind_files::routes::main::{create_folder, index, upload_files};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
