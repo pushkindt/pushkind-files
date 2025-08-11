@@ -10,6 +10,7 @@ use dotenvy::dotenv;
 use pushkind_common::middleware::RedirectUnauthorized;
 use pushkind_common::models::config::CommonServerConfig;
 use pushkind_common::routes::logout;
+use tera::Tera;
 
 use pushkind_files::routes::main::{create_folder, index, not_assigned, upload_files};
 
@@ -47,6 +48,14 @@ async fn main() -> std::io::Result<()> {
     let message_store = CookieMessageStore::builder(secret_key.clone()).build();
     let message_framework = FlashMessagesFramework::builder(message_store).build();
 
+    let tera = match Tera::new("templates/**/*") {
+        Ok(t) => t,
+        Err(e) => {
+            log::error!("Parsing error(s): {e}");
+            std::process::exit(1);
+        }
+    };
+
     HttpServer::new(move || {
         App::new()
             .wrap(message_framework.clone())
@@ -70,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                     .service(upload_files)
                     .service(create_folder),
             )
+            .app_data(web::Data::new(tera.clone()))
             .app_data(web::Data::new(server_config.clone()))
     })
     .bind((address, port))?

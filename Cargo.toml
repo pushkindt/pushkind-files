@@ -17,5 +17,7 @@ log = "0.4.27"
 serde = { version = "1.0.219", features = ["derive"] }
 tera = { version = "1.20.0", features = ["builtins"] }
 uuid = { version = "1.17.0", features = ["v4"] }
-pushkind-common = { git = "https://github.com/pushkindt/pushkind-common.git", branch = "main" }
+pushkind-common = { git = "https://github.com/pushkindt/pushkind-common.git", branch = "main", features = [
+    "actix",
+] }
 validator = { version = "0.20.0", features = ["derive"] }
