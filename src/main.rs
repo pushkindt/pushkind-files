@@ -15,6 +15,7 @@ use tera::Tera;
 use pushkind_files::routes::main::{create_folder, index, upload_files};
 
 #[actix_web::main]
+/// Application entry point launching the Actix Web server.
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
     dotenv().ok(); // Load .env file

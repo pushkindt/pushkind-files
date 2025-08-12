@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 pub mod forms;
 pub mod routes;
 
+/// Base directory for uploaded files.
 pub const UPLOAD_PATH: &str = "./upload/";
 
 /// Returns `None` if the path is invalid (e.g., contains `..`)
@@ -22,14 +23,15 @@ fn sanitize_path(input: &str) -> Option<PathBuf> {
     Some(path.to_path_buf())
 }
 
-/// Sanitizes a file name ensuring it does not contain path separators
-/// or parent directory components.
+/// Sanitizes a file name ensuring it does not contain path separators,
+/// parent directory components, or special entries like `.`.
 fn sanitize_file_name(input: &str) -> Option<PathBuf> {
     let path = sanitize_path(input)?;
-    if path.components().count() == 1 {
-        Some(path)
-    } else {
-        None
+    let mut components = path.components();
+    match (components.next(), components.next()) {
+        // Only accept a single "normal" component such as `file.txt`
+        (Some(std::path::Component::Normal(_)), None) => Some(path),
+        _ => None,
     }
 }
 
@@ -80,6 +82,11 @@ mod tests {
     fn sanitize_file_name_reject_nested() {
         assert!(sanitize_file_name("../secret.txt").is_none());
         assert!(sanitize_file_name("foo/bar.txt").is_none());
+    }
+
+    #[test]
+    fn sanitize_file_name_reject_dot() {
+        assert!(sanitize_file_name(".").is_none());
     }
 
     #[test]
