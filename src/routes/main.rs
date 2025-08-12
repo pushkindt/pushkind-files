@@ -16,18 +16,25 @@ use validator::Validate;
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
 use crate::{is_image_file, sanitize_file_name, sanitize_path};
 
+/// Query parameters for the [`index`] route.
 #[derive(Deserialize)]
 struct IndexQueryParams {
+    /// Optional path relative to the user's upload directory.
     path: Option<String>,
 }
 
+/// Representation of a single file system entry for template rendering.
 #[derive(serde::Serialize)]
 struct FileEntry {
+    /// File or directory name.
     name: String,
+    /// Whether the entry is a directory.
     is_directory: bool,
+    /// Whether the entry is an image file.
     is_image: bool,
 }
 
+/// Display the contents of the current directory for the authenticated user.
 #[get("/")]
 pub async fn index(
     params: web::Query<IndexQueryParams>,
@@ -98,6 +105,7 @@ pub async fn index(
     render_template(&tera, "main/index.html", &context)
 }
 
+/// Handle a file upload and save it to the user's directory.
 #[post("/files/upload")]
 pub async fn upload_files(
     params: web::Query<IndexQueryParams>,
@@ -156,6 +164,7 @@ pub async fn upload_files(
     HttpResponse::Ok().finish()
 }
 
+/// Create a new folder in the user's upload directory.
 #[post("/folder/create")]
 pub async fn create_folder(
     params: web::Query<IndexQueryParams>,
