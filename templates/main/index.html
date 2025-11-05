@@ -127,7 +127,7 @@
                     </div>
                 `);
 
-                fetch(`/files/upload?path=${encodeURIComponent("{{path | safe}}")}`, {
+                fetch(`/files/upload?path={{path | urlencode | safe}}`, {
                     method: "POST",
                     body: formData
                 })
