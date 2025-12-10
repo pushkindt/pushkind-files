@@ -1,86 +1,33 @@
 # AGENTS.md
 
-This document provides guidance to AI code generators when working in this
-repository. Follow these practices so that new code matches the established
-architecture and conventions.
+Guidance for AI changes so new code matches the existing architecture.
 
 ## Project Context
-
-`pushkind-files` is a Rust 2024 Actix Web application that uses Diesel with
-SQLite, Tera templates, and the shared `pushkind-common` crate. The codebase is
-layered into domain models, repository traits and implementations, service
-modules, Actix routes, forms, and templates. Business logic belongs in the
-service layer; handlers and repositories should stay thin and focused on I/O
-concerns.
+Rust 2024 Actix Web app using Diesel (SQLite), Tera, and `pushkind-common`. Layers: domain models, repository traits/impls, services, dto, Actix routes, forms, templates. Keep business logic in services; handlers/repos stay thin.
 
 ## Development Commands
-
-Use these commands to verify your changes before committing:
-
-**Build**
 ```bash
 cargo build --all-features --verbose
-```
-
-**Run Tests**
-```bash
 cargo test --all-features --verbose
-```
-
-**Lint (Clippy)**
-```bash
 cargo clippy --all-features --tests -- -Dwarnings
-```
-
-**Format**
-```bash
 cargo fmt --all -- --check
 ```
 
 ## Coding Standards
+- Domain types in `src/domain`; Diesel models in `src/models`; DTOs in `src/dto`; conversions via `From`/`Into`.
+- Domain fields are strongly typed (e.g., `ManagerEmail`, `HubId`); construct at boundaries after sanitization; domain structs do no validation/normalization.
+- Repos/services return `RepositoryResult<T>`/`ServiceResult<T>` with `thiserror` enums owned by the crate.
+- Services convert domain -> DTO for routes; services return DTOs or domain/`()`. Routes handle flash/redirects.
+- Validate and sanitize early (forms) using `validator` and `ammonia`; trim/normalize before building domain types.
+- Push branching/validation/orchestration into services; prefer DI over globals; document public APIs/breaking changes; avoid `unwrap`/`expect` in production paths.
 
-- Use idiomatic Rust; avoid `unwrap` and `expect` in production paths.
-- Keep modules focused: domain types in `src/domain`, Diesel models in
-  `src/models`, and conversions implemented via `From`/`Into`.
-- Define error enums with `thiserror` inside the crate that owns the failure and
-  return `RepositoryResult<T>` / `ServiceResult<T>` from repository and service
-  functions.
-- Service functions should accept trait bounds (e.g., `TaskReader + TaskWriter`)
-  so the `DieselRepository` and `mockall`-powered fakes remain interchangeable.
-- Sanitize and validate user input early using `validator` and `ammonia` helpers
-  from the form layer.
-- Prefer dependency injection through function parameters over global state.
-- Document all public APIs and any breaking changes.
+## HTTP and Templates
+- Routes in `src/routes` only extract input, call a service, map to HTTP.
+- Use `RedirectSuccess` for service-triggered redirects with flash.
+- Render Tera contexts with sanitized data; reuse components in `templates/`.
+- Enforce auth via `pushkind_common::routes::check_role` and `SERVICE_ACCESS_ROLE`.
 
-## Database Guidelines
-
-- Use Diesel’s query builder APIs with the generated `schema.rs` definitions; do
-  not write raw SQL.
-- Translate between Diesel structs (`src/models`) and domain types inside the
-  repository layer using explicit `From` implementations.
-- Reuse the filtering builders in `TaskListQuery`/`UserListQuery` when adding new
-  queries and extend those structs rather than duplicating logic.
-- Check related records (e.g., users) before inserts or updates and convert
-  missing dependencies into `RepositoryError::NotFound` instead of panicking.
-
-## HTTP and Template Guidelines
-
-- Keep Actix handlers in `src/routes` focused on extracting inputs, invoking a
-  service, and returning an HTTP response.
-- Use the `RedirectSuccess` helper when services need to trigger a redirect with
-  flash messaging.
-- Render templates with Tera contexts that only expose sanitized data. Use the
-  existing component templates under `templates/` for shared UI.
-- Respect the authorization checks via `pushkind_common::routes::check_role` and
-  the `SERVICE_ACCESS_ROLE` constant.
-
-## Testing Expectations
-
-- Add unit tests for new service and form logic. When hitting the database, use
-  Diesel migrations and helper constructors rather than hard-coded SQL strings.
-- Use the mock repository module (`src/repository/mock.rs`) to isolate service
-  tests from Diesel.
-- Ensure new functionality is covered by tests before opening a pull request.
-
-By following these principles the generated code will align with the project’s
-architecture, technology stack, and long-term maintainability goals.
+## Testing
+- Add tests for new service/form logic; use Diesel migrations and helpers for DB work.
+- Use `src/repository/mock.rs` to isolate service tests from Diesel.
+- Ensure new functionality is covered before PRs.
