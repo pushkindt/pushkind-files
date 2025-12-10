@@ -259,14 +259,39 @@
             }
 
             const copyBtn = event.target.closest(".copy-btn");
-            if (copyBtn && copyBtn.dataset.url) {
+            if (copyBtn) {
                 event.preventDefault();
                 event.stopPropagation();
-                const url = copyBtn.dataset.url;
+                const url = copyBtn.dataset.url || copyBtn.dataset.fileUrl;
+                if (!url) return;
+
                 const fullUrl = withBase(baseUrl || location.origin, url);
 
-                navigator.clipboard
-                    .writeText(fullUrl)
+                const fallbackCopy = (text) => {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = text;
+                    textarea.setAttribute("readonly", "");
+                    textarea.style.position = "absolute";
+                    textarea.style.left = "-9999px";
+                    document.body.appendChild(textarea);
+                    const selection = document.getSelection();
+                    const currentRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                    textarea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                    if (selection && currentRange) {
+                        selection.removeAllRanges();
+                        selection.addRange(currentRange);
+                    }
+                };
+
+                Promise.resolve()
+                    .then(() => {
+                        if (navigator.clipboard?.writeText) {
+                            return navigator.clipboard.writeText(fullUrl);
+                        }
+                        fallbackCopy(fullUrl);
+                    })
                     .then(() => {
                         copyBtn.innerHTML =
                             '<i class="bi bi-clipboard-check text-success"></i>';
