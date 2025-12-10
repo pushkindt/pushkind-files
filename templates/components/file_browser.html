@@ -40,10 +40,12 @@
                     {% endif %}
                 </ol>
             </nav>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+            <button class="btn btn-outline-primary" type="button" data-new-folder-toggle>
                 <i class="bi bi-folder-plus me-1"></i> Новая папка
             </button>
         </div>
+
+        {% include 'main/new_folder_modal.html' %}
 
         <div id="dropzone" class="dropzone" data-dropzone>
             Перетащите файлы (не более 10МБ) или
@@ -64,6 +66,4 @@
             {% endfor %}
         </div>
     </div>
-
-    {% include 'main/new_folder_modal.html' %}
 </div>

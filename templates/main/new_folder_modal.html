@@ -1,16 +1,24 @@
-<!-- New Folder Modal -->
-<div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <form id="newFolderForm" class="modal-content" action="/folder/create?path={{path | urlencode}}" method="POST">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newFolderModalLabel">Создать Новую Папку</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
+<!-- Inline create-folder panel (keeps working when embedded inside other modals) -->
+<div class="card shadow-sm mb-3 d-none" data-new-folder-panel>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Создать папку</h6>
+            <button type="button" class="btn-close" aria-label="Close" data-new-folder-cancel></button>
+        </div>
+        <form id="newFolderForm" data-new-folder-form action="/folder/create?path={{path | urlencode}}" method="POST">
+            <div class="mb-3">
                 <label for="folderName" class="form-label">Название</label>
-                <input type="text" class="form-control" id="folderName" name="name" required />
+                <input
+                    type="text"
+                    class="form-control"
+                    id="folderName"
+                    name="name"
+                    required
+                    placeholder="Новая папка"
+                />
             </div>
-            <div class="modal-footer">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-new-folder-cancel>Отмена</button>
                 <button type="submit" class="btn btn-primary">Создать</button>
             </div>
         </form>

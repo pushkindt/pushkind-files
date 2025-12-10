@@ -139,11 +139,15 @@
             });
         }
 
-        function wireFolderForm(form) {
-            if (!form) return;
+        function wireFolderForm(form, panel, hidePanel) {
+            if (!form || form.dataset.wired === "true") return;
+            form.dataset.wired = "true";
 
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
 
                 const formData = new URLSearchParams(new FormData(form));
                 fetch(buildCreateFolderUrl(baseUrl, currentPath), {
@@ -161,20 +165,20 @@
                         }
                     })
                     .then(() => {
-                        const modalEl = document.getElementById("newFolderModal");
-                        const modal =
-                            modalEl && window.bootstrap
-                                ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
-                                : null;
-                        if (modal) {
-                            modal.hide();
-                        }
+                        if (hidePanel) hidePanel();
                         form.reset();
                         return loadBrowser(currentPath);
                     })
                     .catch((err) => {
                         console.error(err);
                         alert(err.message || "Ошибка создания папки");
+                    })
+                    .finally(() => {
+                        if (submitBtn) submitBtn.disabled = false;
+                        if (panel && !panel.classList.contains("d-none")) {
+                            const input = panel.querySelector("input");
+                            if (input) input.focus();
+                        }
                     });
             });
         }
@@ -185,8 +189,49 @@
             const uploadList = host.querySelector("[data-upload-progress]");
             wireUpload(dropzone, fileInput, uploadList);
 
-            const form = host.querySelector("#newFolderForm");
-            wireFolderForm(form);
+            const panel = host.querySelector("[data-new-folder-panel]");
+            const form = host.querySelector("[data-new-folder-form]");
+            const toggleBtn = host.querySelector("[data-new-folder-toggle]");
+            const cancelBtns = host.querySelectorAll("[data-new-folder-cancel]");
+            const nameInput = host.querySelector("#folderName");
+
+            const showPanel = () => {
+                if (!panel) return;
+                panel.classList.remove("d-none");
+                if (nameInput) {
+                    setTimeout(() => nameInput.focus(), 50);
+                }
+            };
+
+            const hidePanel = () => {
+                if (panel && !panel.classList.contains("d-none")) {
+                    panel.classList.add("d-none");
+                }
+            };
+
+            if (toggleBtn && toggleBtn.dataset.wired !== "true") {
+                toggleBtn.dataset.wired = "true";
+                toggleBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    if (!panel) return;
+                    if (panel.classList.contains("d-none")) {
+                        showPanel();
+                    } else {
+                        hidePanel();
+                    }
+                });
+            }
+
+            cancelBtns.forEach((btn) => {
+                if (btn.dataset.wired === "true") return;
+                btn.dataset.wired = "true";
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    hidePanel();
+                });
+            });
+
+            wireFolderForm(form, panel, hidePanel);
 
             // Rewrite file URLs to point at the configured base.
             host.querySelectorAll("[data-file-url]").forEach((el) => {
