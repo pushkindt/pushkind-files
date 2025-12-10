@@ -145,14 +145,20 @@
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
 
-                const formData = new FormData(form);
+                const formData = new URLSearchParams(new FormData(form));
                 fetch(buildCreateFolderUrl(baseUrl, currentPath), {
                     method: "POST",
                     body: formData,
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
                     credentials: "include",
                 })
-                    .then((res) => {
-                        if (!res.ok) throw new Error("Не удалось создать папку");
+                    .then(async (res) => {
+                        if (!res.ok) {
+                            const msg = (await res.text()) || "Не удалось создать папку";
+                            throw new Error(msg);
+                        }
                     })
                     .then(() => {
                         const modalEl = document.getElementById("newFolderModal");

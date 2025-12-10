@@ -2,7 +2,7 @@ use std::path::Path;
 
 use actix_multipart::form::MultipartForm;
 use actix_web::{HttpResponse, Responder, get, post, web};
-use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
+use actix_web_flash_messages::IncomingFlashMessages;
 use pushkind_common::domain::auth::AuthenticatedUser;
 use pushkind_common::models::config::CommonServerConfig;
 use pushkind_common::routes::redirect;
@@ -120,7 +120,7 @@ pub async fn upload_files(
     ) {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(ServiceError::InvalidFileName) | Err(ServiceError::InvalidPath) => {
-            HttpResponse::BadRequest().body("Incorrect file data")
+            HttpResponse::BadRequest().body("Некорректный файл или путь для загрузки.")
         }
         Err(ServiceError::Unauthorized) => HttpResponse::Unauthorized().finish(),
         Err(e) => {
@@ -141,34 +141,15 @@ pub async fn create_folder(
     let service = file_service(&server_config);
 
     match service.create_folder(&user, params.path.as_deref(), &form) {
-        Ok(()) => {
-            FlashMessage::success("Папка успешно создана.").send();
-            redirect(&format!(
-                "/?path={}",
-                params.path.clone().unwrap_or_default()
-            ))
-        }
-        Err(ServiceError::Validation(msg)) => {
-            FlashMessage::error(msg).send();
-            redirect(&format!(
-                "/?path={}",
-                params.path.clone().unwrap_or_default()
-            ))
-        }
+        Ok(()) => HttpResponse::Created().finish(),
+        Err(ServiceError::Validation(msg)) => HttpResponse::BadRequest().body(msg),
         Err(ServiceError::InvalidPath) => {
-            FlashMessage::error("Недопустимый путь для загрузки файла.").send();
-            redirect(&format!(
-                "/?path={}",
-                params.path.clone().unwrap_or_default()
-            ))
+            HttpResponse::BadRequest().body("Недопустимый путь для загрузки файла.")
         }
-        Err(ServiceError::Unauthorized) => {
-            FlashMessage::error("Недостаточно прав.").send();
-            redirect("/na")
-        }
+        Err(ServiceError::Unauthorized) => HttpResponse::Unauthorized().body("Недостаточно прав."),
         Err(e) => {
             log::error!("Failed to create upload directory: {e:?}");
-            HttpResponse::InternalServerError().finish()
+            HttpResponse::InternalServerError().body("Не удалось создать папку")
         }
     }
 }
