@@ -23,3 +23,5 @@ pushkind-common = { git = "https://github.com/pushkindt/pushkind-common.git", br
 validator = { version = "0.20.0", features = ["derive"] }
 actix-cors = "0.7.1"
 config = { version = "0.15.19", default-features = false, features = ["yaml"] }
+thiserror = "2.0.16"
+tempfile = "3.23.0"
