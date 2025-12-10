@@ -1,0 +1,40 @@
+[Unit]
+Description=pushkind-files (Actix-Web)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=www-data4
+Group=www-data
+
+WorkingDirectory=/var/www4/html
+Environment=APP_ENV=prod
+ExecStart=/var/www4/html/pushkind-files
+
+Restart=on-failure
+RestartSec=2
+
+# Supervisor stopasgroup/killasgroup
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# Logging (journald by default)
+# StandardOutput=append:/var/log/pushkind/files.log
+# StandardError=inherit
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www4/html
+AmbientCapabilities=
+CapabilityBoundingSet=
+LimitNOFILE=65535
+Environment=TMPDIR=/var/www4/html/tmp
+
+[Install]
+WantedBy=multi-user.target
+

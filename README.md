@@ -51,21 +51,31 @@ exercised and tested without going through the web framework:
 - Rust toolchain (install via [rustup](https://www.rust-lang.org/tools/install))
 - `cargo` available on your `PATH`
 
-### Environment
+### Configuration
 
-The service reads configuration from environment variables. The most important
-ones are:
+Settings are layered via the [`config`](https://crates.io/crates/config) crate in the following order (later entries override earlier ones):
 
-| Variable | Description | Default |
+1. `config/default.yaml` (checked in)
+2. `config/{APP_ENV}.yaml` where `APP_ENV` defaults to `local`
+3. Environment variables prefixed with `APP_` (loaded automatically from a `.env` file via `dotenvy`)
+
+Key settings you may want to override:
+
+| Environment variable | Description | Default |
 | --- | --- | --- |
-| `AUTH_SERVICE_URL` | Base URL of the Pushkind authentication service | _required_ |
-| `SECRET_KEY` | 32-byte secret for signing cookies | generated at runtime |
-| `PORT` | HTTP port | `8080` |
-| `ADDRESS` | Interface to bind | `127.0.0.1` |
-| `DOMAIN` | Cookie domain (without protocol) | `localhost` |
+| `APP_SECRET` | 64-byte secret used to sign cookies and flash messages | _required_ |
+| `APP_ADDRESS` | Interface to bind | `127.0.0.1` |
+| `APP_PORT` | HTTP port | `80` (override to `8080` in local.yaml) |
+| `APP_DOMAIN` | Cookie domain (without protocol) | _required_ |
+| `APP_TEMPLATES_DIR` | Glob pattern for templates consumed by Tera | `templates/**/*` |
+| `APP_AUTH_SERVICE_URL` | URL of the Pushkind authentication service | _required_ |
+| `APP_UPLOAD_PATH` | Path to the upload folder | `./upload/` |
 
-Create a `.env` file if you want these values loaded automatically via
-[`dotenvy`](https://crates.io/crates/dotenvy).
+Switch to the production profile with `APP_ENV=prod` or provide your own
+`config/{env}.yaml`. Environment variables always win over YAML values, so a
+local `.env` file containing `APP_SECRET=<64-byte key>` (generate with
+`openssl rand -base64 64`) and any overrides will take effect without changing
+the checked-in config files.
 
 ### Uploads Directory
 

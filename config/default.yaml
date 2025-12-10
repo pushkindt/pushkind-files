@@ -1,0 +1,5 @@
+address: 127.0.0.1
+templates_dir: templates/**/*
+secret: env::APP_SECRET
+auth_service_url: ""
+upload_path: "./upload/"

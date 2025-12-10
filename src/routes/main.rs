@@ -14,6 +14,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::forms::main::{CreateFolderForm, UploadFileForm};
+use crate::models::config::ServerConfig;
 use crate::{is_image_file, sanitize_file_name, sanitize_path};
 
 /// Query parameters for the [`index`] route.
@@ -40,7 +41,8 @@ pub async fn index(
     params: web::Query<IndexQueryParams>,
     user: AuthenticatedUser,
     flash_messages: IncomingFlashMessages,
-    server_config: web::Data<CommonServerConfig>,
+    common_config: web::Data<CommonServerConfig>,
+    server_config: web::Data<ServerConfig>,
     tera: web::Data<Tera>,
 ) -> impl Responder {
     if let Err(response) = ensure_role(&user, "files", Some("/na")) {
@@ -51,7 +53,7 @@ pub async fn index(
         &flash_messages,
         &user,
         "index",
-        &server_config.auth_service_url,
+        &common_config.auth_service_url,
     );
 
     // Sanitize and validate the path
@@ -62,7 +64,7 @@ pub async fn index(
     };
 
     // Construct the full path to the hub directory
-    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
+    let base_path = Path::new(&server_config.upload_path).join(user.hub_id.to_string());
     if let Err(e) = fs::create_dir_all(&base_path) {
         log::error!("Failed to create base path: {e:?}");
         return HttpResponse::InternalServerError().finish();
@@ -111,6 +113,7 @@ pub async fn upload_files(
     params: web::Query<IndexQueryParams>,
     user: AuthenticatedUser,
     MultipartForm(form): MultipartForm<UploadFileForm>,
+    server_config: web::Data<ServerConfig>,
 ) -> impl Responder {
     if ensure_role(&user, "files", None).is_err() {
         return HttpResponse::Unauthorized().finish();
@@ -129,7 +132,7 @@ pub async fn upload_files(
     };
 
     // Base directory: ./upload/{hub_id}
-    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
+    let base_path = Path::new(&server_config.upload_path).join(user.hub_id.to_string());
 
     // Sanitize path parameter to prevent directory traversal
     let sanitized_path = match params.path.as_deref() {
@@ -170,6 +173,7 @@ pub async fn create_folder(
     params: web::Query<IndexQueryParams>,
     user: AuthenticatedUser,
     web::Form(form): web::Form<CreateFolderForm>,
+    server_config: web::Data<ServerConfig>,
 ) -> impl Responder {
     if let Err(response) = ensure_role(&user, "files", Some("/na")) {
         return response;
@@ -185,7 +189,7 @@ pub async fn create_folder(
     }
 
     // Base directory: ./upload/{hub_id}
-    let base_path = Path::new(crate::UPLOAD_PATH).join(user.hub_id.to_string());
+    let base_path = Path::new(&server_config.upload_path).join(user.hub_id.to_string());
 
     // Sanitize path parameter to prevent directory traversal
     let sanitized_path = match params.path.as_deref() {

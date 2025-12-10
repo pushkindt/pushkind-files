@@ -43,6 +43,7 @@ jobs:
         run: |
           ssh cicd@images.pushkind.com "sudo /usr/bin/systemctl stop pushkind-files.service"
           scp ./target/release/pushkind-files cicd@images.pushkind.com:/var/www4/html/
+          scp -r ./config/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./assets/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./templates/ cicd@images.pushkind.com:/var/www4/html/
           ssh cicd@images.pushkind.com "sudo /usr/bin/systemctl start pushkind-files.service"
