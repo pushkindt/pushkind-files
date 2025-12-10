@@ -65,6 +65,41 @@ pub async fn index(
     render_template(&tera, "main/index.html", &context)
 }
 
+/// Render the file browser fragment for embedding in other pages or services.
+#[get("/files/browser")]
+pub async fn file_browser(
+    params: web::Query<IndexQueryParams>,
+    user: AuthenticatedUser,
+    flash_messages: IncomingFlashMessages,
+    common_config: web::Data<CommonServerConfig>,
+    server_config: web::Data<ServerConfig>,
+    tera: web::Data<Tera>,
+) -> impl Responder {
+    let mut context = base_context(
+        &flash_messages,
+        &user,
+        "file_browser",
+        &common_config.auth_service_url,
+    );
+
+    let service = file_service(&server_config);
+
+    let entries: Vec<FileEntryDto> = match service.list_entries(&user, params.path.as_deref()) {
+        Ok(entries) => entries,
+        Err(ServiceError::Unauthorized) => return redirect("/na"),
+        Err(ServiceError::InvalidPath) => return HttpResponse::BadRequest().body("Invalid path"),
+        Err(e) => {
+            log::error!("Failed to list entries: {e:?}");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    context.insert("entries", &entries);
+    context.insert("path", &params.path.clone().unwrap_or_default());
+
+    render_template(&tera, "components/file_browser.html", &context)
+}
+
 /// Handle a file upload and save it to the user's directory.
 #[post("/files/upload")]
 pub async fn upload_files(

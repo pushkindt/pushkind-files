@@ -1,0 +1,69 @@
+<div data-file-browser-root data-current-path="{{ path | default(value='') }}">
+    <style>
+        .file-icon {
+            font-size: 2rem;
+        }
+        .folder-icon {
+            color: #f0ad4e;
+        }
+        .file-card:hover {
+            background-color: #f8f9fa;
+        }
+        .dropzone {
+            border: 2px dashed #6c757d;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+        .dropzone.dragover {
+            background-color: #f1f3f5;
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+        a.card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+
+    <div class="container my-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="filebrowser-nav" data-filebrowser-target="">Root</a>
+                    </li>
+                    {% if path %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ path }}</li>
+                    {% endif %}
+                </ol>
+            </nav>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                <i class="bi bi-folder-plus me-1"></i> Новая папка
+            </button>
+        </div>
+
+        <div id="dropzone" class="dropzone" data-dropzone>
+            Перетащите файлы (не более 10МБ) или
+            <label class="text-primary" style="cursor:pointer;">
+                <u>кликните для загрузки</u>
+                <input type="file" multiple hidden id="fileInput" data-file-input>
+            </label>
+        </div>
+        <div id="uploadProgressList" class="mb-4" data-upload-progress></div>
+
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-4">
+            {% for entry in entries | default(value=[]) %}
+                {% if entry.is_directory %}
+                    {% include 'components/folder.html' %}
+                {% else %}
+                    {% include 'components/file.html' %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {% include 'main/new_folder_modal.html' %}
+</div>

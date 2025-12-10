@@ -11,7 +11,7 @@ use pushkind_common::routes::{logout, not_assigned};
 use tera::Tera;
 
 use crate::models::config::ServerConfig;
-use crate::routes::main::{create_folder, index, upload_files};
+use crate::routes::main::{create_folder, file_browser, index, upload_files};
 
 pub mod domain;
 pub mod dto;
@@ -60,6 +60,7 @@ pub async fn run(server_config: ServerConfig) -> std::io::Result<()> {
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
+                    .service(file_browser)
                     .service(logout)
                     .service(upload_files)
                     .service(create_folder),

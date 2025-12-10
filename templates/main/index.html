@@ -1,181 +1,24 @@
 {% extends 'base.html' %}
 
-{% block styles %}
-<style>
-    .file-icon {
-        font-size: 2rem;
-    }
-    .folder-icon {
-        color: #f0ad4e;
-    }
-    .file-card:hover {
-        background-color: #f8f9fa;
-    }
-    .dropzone {
-        border: 2px dashed #6c757d;
-        border-radius: 10px;
-        padding: 30px;
-        text-align: center;
-        color: #6c757d;
-        margin-bottom: 2rem;
-    }
-    .dropzone.dragover {
-        background-color: #f1f3f5;
-        border-color: #0d6efd;
-        color: #0d6efd;
-    }
-    a.card-link {
-        text-decoration: none;
-        color: inherit;
-    }
-</style>
-{% endblock %}
+{% block styles %}{% endblock %}
 
 
 {% block content %}
     {% include 'components/navigation.html' %}
 
-    <div class="container my-2">
-
-        <!-- Upload and New Folder Bar -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <!-- Breadcrumbs -->
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/">Root</a></li>
-                    {% if path %}
-                        <li class="breadcrumb-item active" aria-current="page">{{ path }}</li>
-                    {% endif %}
-                </ol>
-            </nav>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newFolderModal">
-                <i class="bi bi-folder-plus me-1"></i> Новая папка
-            </button>
-        </div>
-
-
-        <div id="dropzone" class="dropzone">
-            Перетащите файлы (не более 10МБ) или
-            <label class="text-primary" style="cursor:pointer;">
-                <u>кликните для загрузки</u>
-                <input type="file" multiple hidden id="fileInput">
-            </label>
-        </div>
-        <div id="uploadProgressList" class="mb-4"></div>
-
-
-        <!-- Folder and File Grid -->
-        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-4">
-            {% for entry in entries | default(value=[]) %}
-                {% if entry.is_directory %}
-                    <!-- Folder -->
-                    {% include 'components/folder.html' %}
-                {% else %}
-                    <!-- File -->
-                    {% include 'components/file.html' %}
-                {% endif %}
-
-            {% endfor %}
-        </div>
-    </div>
-
-    {% include 'main/new_folder_modal.html' %}
+    <div id="file-browser-root" data-initial-path="{{ path | default(value='') }}"></div>
 
 {% endblock %}
 
 {% block scripts %}
 
+    <script src="/assets/filebrowser.js"></script>
     <script>
-        const dropzone = document.getElementById("dropzone");
-        const fileInput = document.getElementById("fileInput");
-
-        dropzone.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            dropzone.classList.add("dragover");
-        });
-
-        dropzone.addEventListener("dragleave", () => {
-            dropzone.classList.remove("dragover");
-        });
-
-        dropzone.addEventListener("drop", (e) => {
-            e.preventDefault();
-            dropzone.classList.remove("dragover");
-            handleFiles(e.dataTransfer.files);
-        });
-
-        fileInput.addEventListener("change", (e) => {
-            handleFiles(e.target.files);
-        });
-
-        function handleFiles(files) {
-            const uploadList = document.getElementById("uploadProgressList");
-            uploadList.innerHTML = "";
-            let completed = 0;
-            dropzone.classList.add("d-none");
-            fileInput.disabled = true;
-
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append("file", file);
-
-                const id = "upload_" + Math.random().toString(36).slice(2, 10);
-                uploadList.insertAdjacentHTML("beforeend", `
-                    <div class="mb-2" id="${id}_wrapper">
-                        <div class="small mb-1">Uploading: ${file.name}</div>
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    </div>
-                `);
-
-                fetch(`/files/upload?path={{path | urlencode | safe}}`, {
-                    method: "POST",
-                    body: formData
-                })
-                .then(res => {
-                    if (!res.ok) throw new Error(`Не удалось загрузить ${file.name}.`);
-                    return res.text();
-                })
-                .then(() => {
-                    document.getElementById(`${id}_wrapper`).innerHTML = `
-                    ✅ Загружен: <strong>${file.name}</strong>
-                    `;
-                })
-                .catch(err => {
-                    document.getElementById(`${id}_wrapper`).innerHTML = `
-                    ❌ Ошибка загрузки <strong>${file.name}</strong>: ${err.message}
-                    `;
-                })
-                .finally(() => {
-                    completed++;
-                    if (completed === files.length) {
-                        // All files uploaded
-                        setTimeout(() => location.reload(), 1500);
-                    }
-                });
-            }
-        }
-
-        document.addEventListener("click", function (e) {
-            if (e.target.closest(".copy-btn")) {
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                const btn = e.target.closest(".copy-btn");
-                const url = btn.dataset.url;
-                const fullUrl = location.origin + url;
-
-                navigator.clipboard.writeText(fullUrl)
-                .then(() => {
-                    btn.innerHTML = '<i class="bi bi-clipboard-check text-success"></i>';
-                    setTimeout(() => {
-                        btn.innerHTML = '<i class="bi bi-clipboard"></i>';
-                    }, 1500);
-                })
-                .catch(err => {
-                    console.error("Copy failed:", err);
-                    alert("Failed to copy link");
-                });
+        document.addEventListener("DOMContentLoaded", () => {
+            const root = document.getElementById("file-browser-root");
+            const initialPath = root?.dataset.initialPath ?? {{ path | default(value="") | json_encode | safe }};
+            if (window.mountFileBrowser) {
+                window.mountFileBrowser("#file-browser-root", initialPath, { baseUrl: "" });
             }
         });
     </script>

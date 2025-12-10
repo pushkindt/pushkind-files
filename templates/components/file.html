@@ -1,19 +1,26 @@
+{% set parent_path = path | default(value="") %}
+{% if parent_path %}
+    {% set relative_path = parent_path ~ "/" ~ entry.name %}
+{% else %}
+    {% set relative_path = entry.name %}
+{% endif %}
+
 <div class="col">
-    <a href="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="card-link" download>
-    <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-        {% if entry.is_image %}
-            <img src="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" />
-        {% else %}
-            <div class="file-icon mb-2">📄</div>
-        {% endif %}
-        <div class="d-flex justify-content-center align-items-center gap-2">
-            <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
-                {{ entry.name }}
+    <a href="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" class="card-link" download data-file-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}">
+        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
+            {% if entry.is_image %}
+                <img src="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" class="img-fluid rounded mb-2" style="max-height: 120px; object-fit: cover;" alt="preview" data-file-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" />
+            {% else %}
+                <div class="file-icon mb-2">📄</div>
+            {% endif %}
+            <div class="d-flex justify-content-center align-items-center gap-2">
+                <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
+                    {{ entry.name }}
+                </div>
+                <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" data-file-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" title="Copy link">
+                    <i class="bi bi-clipboard"></i>
+                </button>
             </div>
-            <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{path | urlencode}}/{{entry.name | urlencode}}" title="Copy link">
-                <i class="bi bi-clipboard"></i>
-            </button>
         </div>
-    </div>
     </a>
 </div>
