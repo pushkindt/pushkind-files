@@ -1,5 +1,3 @@
-use std::path::{Path, PathBuf};
-
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_identity::IdentityMiddleware;
@@ -13,56 +11,16 @@ use pushkind_common::routes::{logout, not_assigned};
 use tera::Tera;
 
 use crate::models::config::ServerConfig;
-use crate::routes::main::{create_folder, index, upload_files};
+use crate::routes::main::{create_folder, file_browser, index, upload_files};
 
+pub mod domain;
+pub mod dto;
 pub mod forms;
 pub mod models;
 pub mod routes;
+pub mod services;
 
-pub const SERVICE_ACCESS_ROLE: &str = "crm";
-
-/// Returns `None` if the path is invalid (e.g., contains `..`)
-/// Trims leading slashes
-fn sanitize_path(input: &str) -> Option<PathBuf> {
-    let trimmed = input.trim_start_matches('/');
-    let path = Path::new(trimmed);
-
-    // Reject paths with components that go up the directory tree
-    if path
-        .components()
-        .any(|c| matches!(c, std::path::Component::ParentDir))
-    {
-        return None;
-    }
-
-    Some(path.to_path_buf())
-}
-
-/// Sanitizes a file name ensuring it does not contain path separators,
-/// parent directory components, or special entries like `.`.
-fn sanitize_file_name(input: &str) -> Option<PathBuf> {
-    let path = sanitize_path(input)?;
-    let mut components = path.components();
-    match (components.next(), components.next()) {
-        // Only accept a single "normal" component such as `file.txt`
-        (Some(std::path::Component::Normal(_)), None) => Some(path),
-        _ => None,
-    }
-}
-
-/// Returns `true` if the provided file name has a common image extension.
-fn is_image_file(name: &str) -> bool {
-    Path::new(name)
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| {
-            matches!(
-                ext.to_ascii_lowercase().as_str(),
-                "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "svg"
-            )
-        })
-        .unwrap_or(false)
-}
+pub const SERVICE_ACCESS_ROLE: &str = "files";
 
 /// Builds and runs the Actix-Web HTTP server using the provided configuration.
 pub async fn run(server_config: ServerConfig) -> std::io::Result<()> {
@@ -102,6 +60,7 @@ pub async fn run(server_config: ServerConfig) -> std::io::Result<()> {
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
+                    .service(file_browser)
                     .service(logout)
                     .service(upload_files)
                     .service(create_folder),
@@ -116,54 +75,4 @@ pub async fn run(server_config: ServerConfig) -> std::io::Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::Path;
-
-    #[test]
-    fn sanitize_path_valid() {
-        let path = sanitize_path("folder/sub").expect("valid path");
-        assert_eq!(path, Path::new("folder/sub"));
-    }
-
-    #[test]
-    fn sanitize_path_invalid_parent() {
-        assert!(sanitize_path("../secret").is_none());
-        assert!(sanitize_path("folder/../secret").is_none());
-    }
-
-    #[test]
-    fn sanitize_path_leading_slash() {
-        let path = sanitize_path("/leading/path").expect("valid path");
-        assert_eq!(path, Path::new("leading/path"));
-    }
-
-    #[test]
-    fn sanitize_file_name_single_component() {
-        let path = sanitize_file_name("image.png").expect("valid file name");
-        assert_eq!(path, Path::new("image.png"));
-    }
-
-    #[test]
-    fn sanitize_file_name_reject_nested() {
-        assert!(sanitize_file_name("../secret.txt").is_none());
-        assert!(sanitize_file_name("foo/bar.txt").is_none());
-    }
-
-    #[test]
-    fn sanitize_file_name_reject_dot() {
-        assert!(sanitize_file_name(".").is_none());
-    }
-
-    #[test]
-    fn is_image_file_positive() {
-        assert!(is_image_file("photo.JPG"));
-        assert!(is_image_file("image.png"));
-    }
-
-    #[test]
-    fn is_image_file_negative() {
-        assert!(!is_image_file("document.txt"));
-        assert!(!is_image_file("noextension"));
-    }
-}
+mod tests {}

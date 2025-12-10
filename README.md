@@ -18,19 +18,23 @@ capabilities for members who hold the appropriate service role.
 The codebase follows a clean, layered structure so that business logic can be
 exercised and tested without going through the web framework:
 
-- **Core utilities (`src/lib.rs`)** – Shared helpers for upload paths, file name
-  sanitisation, and image classification used across routes and forms.
-- **Forms (`src/forms`)** – Structures for multipart uploads and folder creation
-  with `validator`-backed input checks.
-- **Routes (`src/routes`)** – Actix Web handlers that guard access, list hub
-  directories, save uploads, and manage flash messaging before rendering Tera
-  templates.
+- **Domain (`src/domain`)** – Type-safe models for clients, client events, and
+  managers. Builder-style helpers make it easy to construct new payloads while
+  capturing timestamps, normalising contact data (phone numbers stored in E164
+  format), and sanitising inputs early.
+- **Services (`src/services`)** – Application use-cases that orchestrate domain
+  logic, repository traits, and Pushkind authentication helpers. Services return
+  `ServiceResult<T>` and map infrastructure errors into well-defined service
+  errors.
+- **DTOs (`src/dto`)** – Data transfer objects for rendering templates and API
+  responses. Services convert domain types to DTOs before handing data to routes,
+  keeping handlers thin and domain models focused.
+- **Forms (`src/forms`)** – `serde`/`validator` powered structs that handle
+  request payload validation, CSV parsing, and transformation into domain types.
+- **Routes (`src/routes`)** – Actix Web handlers that wire HTTP requests into the
+  service layer and render Tera templates or redirect with flash messages.
 - **Templates (`templates/`)** – Server-rendered UI built with Tera and
-  Bootstrap 5, showing flash messages and file system metadata pulled from the
-  routes.
-- **Server bootstrap (`src/main.rs`)** – Builds the Actix application, applies
-  authentication middleware from `pushkind-common`, and mounts static file
-  serving for uploads and assets.
+  Bootstrap 5
 
 ## Technology Stack
 
@@ -121,12 +125,15 @@ manually.
 
 ## Project Principles
 
+- **Domain-driven**: keep business rules in the domain and service layers and
+  translate to/from external representations at the boundaries.
+- **Explicit errors**: use `thiserror` to define granular error types and convert
+  them into `ServiceError`/`RepositoryError` variants instead of relying on
+  `anyhow`.
+- **No panics in production paths**: avoid `unwrap`/`expect` in request handlers,
+  services, and repositories—propagate errors instead.
 - **Path safety**: normalise directories and file names, reject traversal
   attempts, and use the utilities in `src/lib.rs` whenever possible.
-- **Explicit errors**: bubble up filesystem errors and map them into HTTP
-  responses that keep users informed without exposing sensitive paths.
-- **No panics in production paths**: avoid `unwrap`/`expect` in request handlers
-  and prefer graceful error handling with logging.
 - **Security aware**: sanitize user-facing strings, validate form inputs with
   `validator`, and rely on `pushkind-common::routes::ensure_role` to enforce the
   `"files"` service role.

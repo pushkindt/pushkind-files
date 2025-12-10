@@ -1891,7 +1891,9 @@ dependencies = [
  "log",
  "pushkind-common",
  "serde",
+ "tempfile",
  "tera",
+ "thiserror 2.0.16",
  "uuid",
  "validator",
 ]

@@ -1,8 +1,15 @@
+{% set parent_path = path | default(value="") %}
+{% if parent_path %}
+    {% set target_path = parent_path ~ "/" ~ entry.name %}
+{% else %}
+    {% set target_path = entry.name %}
+{% endif %}
+
 <div class="col">
-    <a href="/?path={{path | urlencode}}/{{entry.name | urlencode}}" class="card-link">
-    <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-        <div class="file-icon folder-icon mb-2">📁</div>
-        <div>{{entry.name}}</div>
-    </div>
+    <a href="/?path={{ target_path | urlencode }}" class="card-link filebrowser-nav" data-filebrowser-target="{{ target_path }}">
+        <div class="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
+            <div class="file-icon folder-icon mb-2">📁</div>
+            <div>{{entry.name}}</div>
+        </div>
     </a>
 </div>
