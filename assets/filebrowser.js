@@ -5,8 +5,21 @@
     }
 
     function withBase(baseUrl, path) {
+        if (!path) return baseUrl;
+
+        // If `path` is already absolute, don't prepend the base.
+        // This prevents cases like: https://images.pushkind.comhttps://images.pushkind.com/upload/...
+        if (
+            path.startsWith("http://") ||
+            path.startsWith("https://") ||
+            path.startsWith("//")
+        ) {
+            return path;
+        }
+
         if (!baseUrl) return path;
-        return `${baseUrl}${path}`;
+        if (path.startsWith("/")) return `${baseUrl}${path}`;
+        return `${baseUrl}/${path}`;
     }
 
     function buildBrowserUrl(baseUrl, path) {
@@ -242,8 +255,6 @@
                     el.src = absolute;
                 } else if (el.tagName === "A") {
                     el.href = absolute;
-                } else if (el.dataset.url) {
-                    el.dataset.url = absolute;
                 }
             });
         }
@@ -262,7 +273,7 @@
             if (copyBtn) {
                 event.preventDefault();
                 event.stopPropagation();
-                const url = copyBtn.dataset.url || copyBtn.dataset.fileUrl;
+                const url = copyBtn.dataset.fileUrl;
                 if (!url) return;
 
                 const fullUrl = withBase(baseUrl || location.origin, url);
