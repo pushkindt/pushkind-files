@@ -17,7 +17,7 @@
                 <div class="text-truncate" style="max-width: calc(100% - 36px);" title="{{ entry.name }}">
                     {{ entry.name }}
                 </div>
-                <button class="btn btn-sm btn-light border copy-btn" data-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" data-file-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" title="Copy link">
+                <button class="btn btn-sm btn-light border copy-btn" data-file-url="/upload/{{current_user.hub_id}}/{{ relative_path | urlencode }}" title="Copy link">
                     <i class="bi bi-clipboard"></i>
                 </button>
             </div>
