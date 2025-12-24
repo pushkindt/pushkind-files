@@ -1,4 +1,5 @@
 use std::fs;
+use std::time::SystemTime;
 
 use actix_multipart::form::tempfile::TempFile;
 use pushkind_common::domain::auth::AuthenticatedUser;
@@ -72,7 +73,7 @@ impl FileService {
             return Err(ServiceError::InvalidPath);
         }
 
-        let mut entries: Vec<StorageEntry> = fs::read_dir(&target_path)
+        let mut entries: Vec<(StorageEntry, Option<SystemTime>)> = fs::read_dir(&target_path)
             .map_err(ServiceError::ListEntries)?
             .filter_map(|e| e.ok())
             .filter_map(|entry| {
@@ -82,6 +83,7 @@ impl FileService {
                     Ok(name) => name,
                     Err(_) => return None,
                 };
+                let created_at = entry.metadata().ok().and_then(|m| m.created().ok());
                 let kind = if is_directory {
                     EntryKind::Directory
                 } else {
@@ -90,21 +92,44 @@ impl FileService {
                     }
                 };
 
-                Some(StorageEntry::new(name, kind))
+                Some((StorageEntry::new(name, kind), created_at))
             })
             .collect();
 
-        entries.sort_by(|a, b| match (a.is_directory(), b.is_directory()) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a
-                .name()
-                .as_str()
-                .to_lowercase()
-                .cmp(&b.name().as_str().to_lowercase()),
+        entries.sort_by(|(a_entry, a_created), (b_entry, b_created)| {
+            match (a_entry.is_directory(), b_entry.is_directory()) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                (true, true) => a_entry
+                    .name()
+                    .as_str()
+                    .to_lowercase()
+                    .cmp(&b_entry.name().as_str().to_lowercase()),
+                (false, false) => {
+                    let created_order = match (a_created, b_created) {
+                        (Some(a_time), Some(b_time)) => b_time.cmp(a_time),
+                        (Some(_), None) => std::cmp::Ordering::Less,
+                        (None, Some(_)) => std::cmp::Ordering::Greater,
+                        (None, None) => std::cmp::Ordering::Equal,
+                    };
+
+                    if created_order == std::cmp::Ordering::Equal {
+                        a_entry
+                            .name()
+                            .as_str()
+                            .to_lowercase()
+                            .cmp(&b_entry.name().as_str().to_lowercase())
+                    } else {
+                        created_order
+                    }
+                }
+            }
         });
 
-        Ok(entries.into_iter().map(FileEntryDto::from).collect())
+        Ok(entries
+            .into_iter()
+            .map(|(entry, _)| FileEntryDto::from(entry))
+            .collect())
     }
 
     /// Create a folder (and parents) within the hub storage.
@@ -190,17 +215,33 @@ mod tests {
         let entries = service.list_entries(&user, None).unwrap();
 
         let names: Vec<String> = entries.iter().map(|e| e.name.clone()).collect();
-        assert_eq!(
-            names,
-            vec![
-                "b_folder".to_string(),
-                "a_file.txt".to_string(),
-                "c_image.png".to_string()
-            ]
-        );
         assert!(entries[0].is_directory);
         assert!(!entries[1].is_directory);
         assert!(entries[2].is_image);
+
+        let created_a = fs::metadata(hub_root.join("a_file.txt"))
+            .ok()
+            .and_then(|m| m.created().ok());
+        let created_c = fs::metadata(hub_root.join("c_image.png"))
+            .ok()
+            .and_then(|m| m.created().ok());
+        let expected_files = match (created_a, created_c) {
+            (Some(a_time), Some(c_time)) => {
+                if c_time > a_time {
+                    vec!["c_image.png".to_string(), "a_file.txt".to_string()]
+                } else if a_time > c_time {
+                    vec!["a_file.txt".to_string(), "c_image.png".to_string()]
+                } else {
+                    vec!["a_file.txt".to_string(), "c_image.png".to_string()]
+                }
+            }
+            _ => vec!["a_file.txt".to_string(), "c_image.png".to_string()],
+        };
+
+        assert_eq!(
+            names,
+            [&["b_folder".to_string()][..], &expected_files].concat()
+        );
     }
 
     #[test]
