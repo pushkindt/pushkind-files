@@ -43,6 +43,26 @@
         return withBase(baseUrl, "/folder/create");
     }
 
+    function getPathFromLocation() {
+        const url = new URL(window.location.href);
+        return url.searchParams.get("path") || "";
+    }
+
+    function updateBrowserHistory(path, replace) {
+        const url = new URL(window.location.href);
+        if (path) {
+            url.searchParams.set("path", path);
+        } else {
+            url.searchParams.delete("path");
+        }
+        const state = { path: path || "" };
+        if (replace) {
+            window.history.replaceState(state, "", url.toString());
+        } else {
+            window.history.pushState(state, "", url.toString());
+        }
+    }
+
     function mountFileBrowser(targetSelector, initialPath, options) {
         const host =
             typeof targetSelector === "string"
@@ -57,9 +77,15 @@
         const opts = options || {};
         const baseUrl = normalizeBase(opts.baseUrl || "");
         let currentPath = initialPath || "";
+        const shouldManageHistory = baseUrl === "";
 
-        async function loadBrowser(path) {
+        async function loadBrowser(path, options = {}) {
             currentPath = path || "";
+            const { updateHistory = false, replaceHistory = false } = options;
+
+            if (shouldManageHistory && updateHistory) {
+                updateBrowserHistory(currentPath, replaceHistory);
+            }
 
             const res = await fetch(buildBrowserUrl(baseUrl, currentPath), {
                 credentials: "include",
@@ -263,9 +289,9 @@
             const nav = event.target.closest(".filebrowser-nav");
             if (nav && nav.dataset.filebrowserTarget !== undefined) {
                 event.preventDefault();
-                loadBrowser(nav.dataset.filebrowserTarget || "").catch((err) =>
-                    console.error("[filebrowser] navigation failed", err),
-                );
+                loadBrowser(nav.dataset.filebrowserTarget || "", {
+                    updateHistory: true,
+                }).catch((err) => console.error("[filebrowser] navigation failed", err));
                 return;
             }
 
@@ -316,6 +342,24 @@
                     });
             }
         });
+
+        if (shouldManageHistory) {
+            const urlPath = getPathFromLocation();
+            if (urlPath && urlPath !== currentPath) {
+                currentPath = urlPath;
+            }
+            updateBrowserHistory(currentPath, true);
+            window.addEventListener("popstate", (event) => {
+                const nextPath =
+                    (event.state && typeof event.state.path === "string"
+                        ? event.state.path
+                        : getPathFromLocation()) || "";
+                if (nextPath === currentPath) return;
+                loadBrowser(nextPath).catch((err) =>
+                    console.error("[filebrowser] popstate navigation failed", err),
+                );
+            });
+        }
 
         loadBrowser(currentPath).catch((err) => {
             console.error("[filebrowser] initial load failed", err);
