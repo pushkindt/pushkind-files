@@ -200,7 +200,9 @@ mod tests {
         let hub_root = dir.path().join("42");
         fs::create_dir_all(&hub_root).unwrap();
         fs::create_dir(hub_root.join("b_folder")).unwrap();
+        fs::create_dir(hub_root.join("a_folder")).unwrap();
         fs::write(hub_root.join("a_file.txt"), b"hello").unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(1));
         fs::write(hub_root.join("c_image.png"), b"fakepng").unwrap();
 
         let service = build_service(dir.path().to_path_buf());
@@ -216,8 +218,9 @@ mod tests {
 
         let names: Vec<String> = entries.iter().map(|e| e.name.clone()).collect();
         assert!(entries[0].is_directory);
-        assert!(!entries[1].is_directory);
-        assert!(entries[2].is_image);
+        assert!(entries[1].is_directory);
+        assert!(!entries[2].is_directory);
+        assert!(entries.iter().any(|entry| entry.is_image));
 
         let created_a = fs::metadata(hub_root.join("a_file.txt"))
             .ok()
@@ -225,22 +228,24 @@ mod tests {
         let created_c = fs::metadata(hub_root.join("c_image.png"))
             .ok()
             .and_then(|m| m.created().ok());
+        // When creation timestamps are unavailable or identical, we fall back to name ordering.
         let expected_files = match (created_a, created_c) {
-            (Some(a_time), Some(c_time)) => {
-                if c_time > a_time {
-                    vec!["c_image.png".to_string(), "a_file.txt".to_string()]
-                } else if a_time > c_time {
-                    vec!["a_file.txt".to_string(), "c_image.png".to_string()]
-                } else {
-                    vec!["a_file.txt".to_string(), "c_image.png".to_string()]
-                }
+            (Some(a_time), Some(c_time)) if c_time > a_time => {
+                vec!["c_image.png".to_string(), "a_file.txt".to_string()]
+            }
+            (Some(a_time), Some(c_time)) if a_time > c_time => {
+                vec!["a_file.txt".to_string(), "c_image.png".to_string()]
             }
             _ => vec!["a_file.txt".to_string(), "c_image.png".to_string()],
         };
 
         assert_eq!(
             names,
-            [&["b_folder".to_string()][..], &expected_files].concat()
+            [
+                &["a_folder".to_string(), "b_folder".to_string()][..],
+                &expected_files
+            ]
+            .concat()
         );
     }
 
