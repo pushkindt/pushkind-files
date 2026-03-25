@@ -1,14 +1,4 @@
 (function () {
-  const DIST_ROOT = "/assets/dist";
-  const MANIFEST_PATH = DIST_ROOT + "/manifest.json";
-  const ENTRY_KEY = "app/browser.html";
-
-  const loaderState = {
-    pending: null,
-    styleHrefs: new Set(),
-    scriptSrcs: new Set(),
-  };
-
   function normalizeBaseUrl(baseUrl) {
     if (!baseUrl) {
       return "";
@@ -51,126 +41,99 @@
     return new URL(currentScript.src, window.location.href).origin;
   }
 
-  function collectCss(manifest, key, acc) {
-    const chunk = manifest[key];
-    if (!chunk) {
-      return;
+  function resolveTarget(target) {
+    if (typeof target === "string") {
+      const element = document.querySelector(target);
+      if (!element) {
+        throw new Error("File browser mount target not found: " + target);
+      }
+
+      return element;
     }
 
-    if (Array.isArray(chunk.css)) {
-      chunk.css.forEach((href) => acc.add(href));
-    }
-
-    if (Array.isArray(chunk.imports)) {
-      chunk.imports.forEach((importKey) => collectCss(manifest, importKey, acc));
-    }
+    return target;
   }
 
-  function ensureStyle(baseUrl, href) {
-    const absoluteHref = withBaseUrl(baseUrl, DIST_ROOT + "/" + href);
-    if (loaderState.styleHrefs.has(absoluteHref)) {
-      return;
+  function buildBrowserDocumentUrl(baseUrl, path) {
+    const documentUrl = withBaseUrl(baseUrl, "/assets/dist/app/browser.html");
+    const url = new URL(documentUrl, window.location.href);
+
+    if (path) {
+      url.searchParams.set("path", path);
     }
 
-    loaderState.styleHrefs.add(absoluteHref);
-
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = absoluteHref;
-    link.crossOrigin = "";
-    document.head.appendChild(link);
+    return url.toString();
   }
 
-  function loadModuleScript(baseUrl, src) {
-    const absoluteSrc = withBaseUrl(baseUrl, DIST_ROOT + "/" + src);
-    if (loaderState.scriptSrcs.has(absoluteSrc)) {
-      return Promise.resolve();
-    }
-
-    loaderState.scriptSrcs.add(absoluteSrc);
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.type = "module";
-      script.src = absoluteSrc;
-      script.crossOrigin = "";
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Failed to load embedded file browser runtime."));
-      document.head.appendChild(script);
-    });
+  function createFrame(src) {
+    const iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.loading = "lazy";
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+    iframe.style.width = "100%";
+    iframe.style.height = "18rem";
+    iframe.style.border = "0";
+    iframe.style.display = "block";
+    iframe.style.overflow = "hidden";
+    iframe.setAttribute("title", "File browser");
+    iframe.setAttribute("scrolling", "no");
+    return iframe;
   }
 
-  async function loadRuntime(baseUrl) {
-    const manifestResponse = await fetch(withBaseUrl(baseUrl, MANIFEST_PATH), {
-      credentials: "include",
-    });
-    if (!manifestResponse.ok) {
-      throw new Error("Failed to load embedded file browser manifest.");
-    }
-
-    const manifest = await manifestResponse.json();
-    const entry = manifest[ENTRY_KEY];
-    if (!entry || typeof entry.file !== "string") {
-      throw new Error("Embedded file browser entry is missing from the manifest.");
-    }
-
-    const cssFiles = new Set();
-    collectCss(manifest, ENTRY_KEY, cssFiles);
-    cssFiles.forEach((href) => ensureStyle(baseUrl, href));
-
-    await loadModuleScript(baseUrl, entry.file);
-  }
-
-  async function ensureRuntime(baseUrl) {
-    if (
-      typeof window.mountFileBrowser === "function" &&
-      window.mountFileBrowser !== compatibilityMountFileBrowser
-    ) {
-      return;
-    }
-
-    if (!loaderState.pending) {
-      loaderState.pending = loadRuntime(baseUrl).finally(() => {
-        loaderState.pending = null;
-      });
-    }
-
-    await loaderState.pending;
-
-    if (
-      typeof window.mountFileBrowser !== "function" ||
-      window.mountFileBrowser === compatibilityMountFileBrowser
-    ) {
-      throw new Error("Embedded file browser runtime did not register mountFileBrowser.");
-    }
-  }
-
-  function compatibilityMountFileBrowser(target, initialPath, options) {
+  function mountFileBrowser(target, initialPath, options) {
+    const host = resolveTarget(target);
     const baseUrl = normalizeBaseUrl((options && options.baseUrl) || defaultBaseUrl());
-    let mounted = null;
+    let currentPath = initialPath || "";
+    let frame = createFrame(buildBrowserDocumentUrl(baseUrl, currentPath));
+    let disposed = false;
 
-    const ready = ensureRuntime(baseUrl).then(() => {
-      mounted = window.mountFileBrowser(target, initialPath, Object.assign({}, options, { baseUrl }));
-      return mounted;
-    });
+    function handleMessage(event) {
+      if (disposed || event.source !== frame.contentWindow) {
+        return;
+      }
+
+      const data = event.data;
+      if (!data || data.source !== "pushkind-files" || data.type !== "embedded-file-browser:resize") {
+        return;
+      }
+
+      const nextHeight = Number(data.height);
+      if (!Number.isFinite(nextHeight) || nextHeight <= 0) {
+        return;
+      }
+
+      frame.style.height = Math.max(220, Math.ceil(nextHeight)) + "px";
+    }
+
+    function replaceFrame(nextPath) {
+      currentPath = nextPath || "";
+      const nextFrame = createFrame(buildBrowserDocumentUrl(baseUrl, currentPath));
+      host.replaceChildren(nextFrame);
+      frame = nextFrame;
+    }
+
+    window.addEventListener("message", handleMessage);
+    host.replaceChildren(frame);
 
     return {
       dispose() {
-        void ready.then((instance) => instance.dispose());
+        disposed = true;
+        window.removeEventListener("message", handleMessage);
+        if (frame && frame.parentNode === host) {
+          host.removeChild(frame);
+        }
       },
       async navigate(path) {
-        const instance = await ready;
-        return instance.navigate(path);
+        replaceFrame(path);
       },
       async reload() {
-        const instance = await ready;
-        return instance.reload();
+        replaceFrame(currentPath);
       },
       getPath() {
-        return mounted ? mounted.getPath() : initialPath;
+        return currentPath;
       },
     };
   }
 
-  window.mountFileBrowser = compatibilityMountFileBrowser;
+  window.mountFileBrowser = mountFileBrowser;
 })();
