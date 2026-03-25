@@ -75,6 +75,7 @@
     iframe.style.border = "0";
     iframe.style.display = "block";
     iframe.style.overflow = "hidden";
+    iframe.allow = "clipboard-write";
     iframe.setAttribute("title", "File browser");
     iframe.setAttribute("scrolling", "no");
     return iframe;
