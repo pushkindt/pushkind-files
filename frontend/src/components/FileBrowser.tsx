@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
 import {
-  buildBrowserUrl,
   buildCreateFolderUrl,
   buildMainPageUrl,
   buildUploadUrl,
@@ -26,10 +25,7 @@ function FileBrowserBreadcrumbs({
   historyMode: "managed" | "disabled";
   onNavigate?: (path: string) => void;
 }) {
-  const rootHref =
-    historyMode === "managed"
-      ? buildMainPageUrl(baseUrl, "")
-      : buildBrowserUrl(baseUrl, "");
+  const rootHref = buildMainPageUrl(baseUrl, "");
 
   return (
     <nav aria-label="breadcrumb">
@@ -71,10 +67,7 @@ function FolderCard({
   onNavigate?: (path: string) => void;
 }) {
   const targetPath = entry.navigationPath ?? entry.relativePath;
-  const href =
-    historyMode === "managed"
-      ? buildMainPageUrl(baseUrl, targetPath)
-      : buildBrowserUrl(baseUrl, targetPath);
+  const href = buildMainPageUrl(baseUrl, targetPath);
 
   return (
     <div className="col">

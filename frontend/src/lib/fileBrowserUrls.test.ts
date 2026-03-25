@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildBrowserUrl,
   buildCreateFolderUrl,
   buildFileDownloadUrl,
   buildUploadUrl,
@@ -17,10 +16,7 @@ describe("fileBrowserUrls", () => {
     );
   });
 
-  it("builds browser and mutation URLs relative to the base", () => {
-    expect(buildBrowserUrl("https://example.com/root", "nested/folder")).toBe(
-      "https://example.com/root/files/browser?path=nested%2Ffolder",
-    );
+  it("builds mutation URLs relative to the base", () => {
     expect(buildUploadUrl("", "nested/folder")).toBe(
       "/files/upload?path=nested%2Ffolder",
     );

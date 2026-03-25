@@ -13,7 +13,7 @@ use pushkind_common::routes::logout;
 use crate::models::config::{AppConfig, Settings};
 use crate::routes::api::{api_v1_files_entries, api_v1_iam, api_v1_no_access};
 use crate::routes::aux::not_assigned;
-use crate::routes::main::{create_folder, file_browser, index, upload_files};
+use crate::routes::main::{create_folder, index, upload_files};
 
 pub mod domain;
 pub mod dto;
@@ -68,7 +68,6 @@ pub fn build_server(listener: TcpListener, app_config: AppConfig) -> std::io::Re
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
-                    .service(file_browser)
                     .service(logout)
                     .service(upload_files)
                     .service(create_folder),
