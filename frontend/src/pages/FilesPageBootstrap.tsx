@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { FileBrowser } from "../components/FileBrowser";
 import { FilesAppShell } from "../components/FilesAppShell";
 import { FilesPageFatalState } from "../components/FilesPageFatalState";
-import { FilesPageLoadingState } from "../components/FilesPageLoadingState";
 import { FlashStack } from "../components/FlashStack";
 import { UserMenu } from "../components/UserMenu";
 import { bootstrapFilesPage } from "../lib/bootstrapFilesPage";
@@ -16,6 +15,7 @@ import {
 import {
   createFolder,
   fetchFileBrowserData,
+  fetchHubMenuItems,
   toViewModel,
   uploadFile,
 } from "../lib/filesApi";
@@ -77,6 +77,52 @@ export function FilesPageBootstrap() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (state.status !== "ready" || isFixtureMode()) {
+      return;
+    }
+
+    let active = true;
+
+    void fetchHubMenuItems(
+      state.data.shell.homeUrl,
+      state.data.shell.currentUser.hubId,
+    )
+      .then((menu) => {
+        if (!active) {
+          return;
+        }
+
+        setState((currentState) => {
+          if (currentState.status !== "ready") {
+            return currentState;
+          }
+
+          return {
+            status: "ready",
+            data: {
+              ...currentState.data,
+              menu,
+            },
+          };
+        });
+      })
+      .catch((error) => {
+        console.warn(
+          "Failed to load auth navigation menu. Falling back to home link only.",
+          error,
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    state.status,
+    state.status === "ready" ? state.data.shell.currentUser.hubId : undefined,
+    state.status === "ready" ? state.data.shell.homeUrl : undefined,
+  ]);
 
   useEffect(() => {
     if (state.status !== "ready") {
@@ -165,7 +211,7 @@ export function FilesPageBootstrap() {
   }
 
   if (state.status === "loading") {
-    return <FilesPageLoadingState />;
+    return null;
   }
 
   if (state.status === "error") {
