@@ -1,6 +1,6 @@
 server:
   address: 127.0.0.1
 app:
-  secret: env::APP_SECRET
+  secret: env::APP_APP.SECRET
   auth_service_url: ""
   upload_path: "./upload/"

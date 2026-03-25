@@ -252,17 +252,20 @@ export function FileBrowser({
     setFolderFieldErrors({});
     setFolderMessage(null);
 
-    const result = await onCreateFolder(folderName);
-    if (result.ok) {
-      setFolderName("");
-      setIsCreateFolderOpen(false);
-      return;
-    }
+    try {
+      const result = await onCreateFolder(folderName);
+      if (result.ok) {
+        setFolderName("");
+        setIsCreateFolderOpen(false);
+        return;
+      }
 
-    setFolderFieldErrors(result.fieldErrors);
-    setFolderMessage(result.message);
-    setIsCreateFolderOpen(true);
-    setIsFolderSubmitting(false);
+      setFolderFieldErrors(result.fieldErrors);
+      setFolderMessage(result.message);
+      setIsCreateFolderOpen(true);
+    } finally {
+      setIsFolderSubmitting(false);
+    }
   }
 
   async function handleFiles(fileList: FileList | File[]) {
