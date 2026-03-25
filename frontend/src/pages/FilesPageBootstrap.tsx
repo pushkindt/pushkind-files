@@ -6,13 +6,22 @@ import { FilesPageFatalState } from "../components/FilesPageFatalState";
 import { FilesPageLoadingState } from "../components/FilesPageLoadingState";
 import { FlashStack } from "../components/FlashStack";
 import { UserMenu } from "../components/UserMenu";
-import {
-  bootstrapFilesPage,
-} from "../lib/bootstrapFilesPage";
+import { bootstrapFilesPage } from "../lib/bootstrapFilesPage";
 import { isFixtureMode } from "../lib/fixtureMode";
-import { sampleBrowserApiResponse, sampleShellData } from "../lib/fileBrowserFixtures";
-import { createFolder, fetchFileBrowserData, toViewModel, uploadFile } from "../lib/filesApi";
-import { getPathFromLocation, syncBrowserHistory } from "../lib/fileBrowserHistory";
+import {
+  sampleBrowserApiResponse,
+  sampleShellData,
+} from "../lib/fileBrowserFixtures";
+import {
+  createFolder,
+  fetchFileBrowserData,
+  toViewModel,
+  uploadFile,
+} from "../lib/filesApi";
+import {
+  getPathFromLocation,
+  syncBrowserHistory,
+} from "../lib/fileBrowserHistory";
 import type { FilesPageBootstrapData } from "../lib/fileBrowserModels";
 import "../styles/files-page.css";
 
@@ -73,7 +82,9 @@ export function FilesPageBootstrap() {
     }
 
     const onPopState = () => {
-      void navigateToPath(getPathFromLocation(window.location), { fromPopState: true });
+      void navigateToPath(getPathFromLocation(window.location), {
+        fromPopState: true,
+      });
     };
 
     syncBrowserHistory(state.data.browser.currentPath, true);
@@ -92,7 +103,10 @@ export function FilesPageBootstrap() {
     return fetchFileBrowserData(state.data.baseUrl, path);
   }
 
-  async function navigateToPath(path: string, options?: { replace?: boolean; fromPopState?: boolean }) {
+  async function navigateToPath(
+    path: string,
+    options?: { replace?: boolean; fromPopState?: boolean },
+  ) {
     if (state.status !== "ready") {
       return;
     }
@@ -119,7 +133,10 @@ export function FilesPageBootstrap() {
     } catch (error) {
       setState({
         status: "error",
-        message: error instanceof Error ? error.message : "Не удалось загрузить файлы.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Не удалось загрузить файлы.",
       });
     }
   }

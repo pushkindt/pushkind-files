@@ -11,7 +11,9 @@ registerReactFileBrowserMount();
 const container = document.getElementById(ROOT_ELEMENT_ID);
 
 if (!container) {
-  throw new Error(`Missing #${ROOT_ELEMENT_ID} mount node for the embedded browser frontend.`);
+  throw new Error(
+    `Missing #${ROOT_ELEMENT_ID} mount node for the embedded browser frontend.`,
+  );
 }
 
 createRoot(container).render(

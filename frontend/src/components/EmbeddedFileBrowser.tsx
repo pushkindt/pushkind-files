@@ -27,7 +27,9 @@ export function EmbeddedFileBrowser({
   onPathChange,
 }: EmbeddedFileBrowserProps) {
   const { baseUrl, historyMode } = resolveMountOptions(options);
-  const [data, setData] = useState<FileBrowserApiResponse | null>(initialData ?? null);
+  const [data, setData] = useState<FileBrowserApiResponse | null>(
+    initialData ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   async function load(path: string) {
@@ -38,7 +40,11 @@ export function EmbeddedFileBrowser({
       onPathChange?.(nextData.currentPath);
       return nextData;
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить файлы.");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Не удалось загрузить файлы.",
+      );
       return null;
     }
   }

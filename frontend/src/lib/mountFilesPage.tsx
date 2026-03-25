@@ -10,7 +10,9 @@ export function mountFilesPage() {
   const container = document.getElementById(ROOT_ELEMENT_ID);
 
   if (!container) {
-    throw new Error(`Missing #${ROOT_ELEMENT_ID} mount node for the files page frontend.`);
+    throw new Error(
+      `Missing #${ROOT_ELEMENT_ID} mount node for the files page frontend.`,
+    );
   }
 
   registerReactFileBrowserMount();

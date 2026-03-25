@@ -27,7 +27,9 @@ function FileBrowserBreadcrumbs({
   onNavigate?: (path: string) => void;
 }) {
   const rootHref =
-    historyMode === "managed" ? buildMainPageUrl(baseUrl, "") : buildBrowserUrl(baseUrl, "");
+    historyMode === "managed"
+      ? buildMainPageUrl(baseUrl, "")
+      : buildBrowserUrl(baseUrl, "");
 
   return (
     <nav aria-label="breadcrumb">
@@ -97,11 +99,7 @@ function FolderCard({
   );
 }
 
-function FileCard({
-  entry,
-}: {
-  entry: FileBrowserEntry;
-}) {
+function FileCard({ entry }: { entry: FileBrowserEntry }) {
   const [copied, setCopied] = useState(false);
   const downloadUrl = entry.downloadUrl ?? "#";
   const previewUrl = entry.previewUrl ?? downloadUrl;
@@ -111,47 +109,50 @@ function FileCard({
     <div className="col">
       <a href={downloadUrl} className="card-link" download>
         <div className="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-        {entry.isImage ? (
-          <img
-            src={previewUrl}
-            className="img-fluid rounded mb-2 shared-file-preview"
-            alt="preview"
-          />
-        ) : (
-          <div className="file-icon mb-2">📄</div>
-        )}
-        <div className="d-flex justify-content-center align-items-center gap-2">
-          <div
-            className="text-truncate"
-            style={{ maxWidth: "calc(100% - 36px)" }}
-            title={entry.name}
-          >
-            {entry.name}
-          </div>
-          <button
-            className="btn btn-sm btn-light border"
-            type="button"
-            title="Copy link"
-            aria-label={`Copy link for ${entry.name}`}
-            onClick={async (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-
-              if (!copyUrl) {
-                return;
-              }
-
-              const absoluteUrl = withBaseUrl(window.location.origin, copyUrl);
-              await navigator.clipboard.writeText(absoluteUrl);
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1500);
-            }}
-          >
-            <i
-              className={`bi ${copied ? "bi-clipboard-check text-success" : "bi-clipboard"}`}
+          {entry.isImage ? (
+            <img
+              src={previewUrl}
+              className="img-fluid rounded mb-2 shared-file-preview"
+              alt="preview"
             />
-          </button>
-        </div>
+          ) : (
+            <div className="file-icon mb-2">📄</div>
+          )}
+          <div className="d-flex justify-content-center align-items-center gap-2">
+            <div
+              className="text-truncate"
+              style={{ maxWidth: "calc(100% - 36px)" }}
+              title={entry.name}
+            >
+              {entry.name}
+            </div>
+            <button
+              className="btn btn-sm btn-light border"
+              type="button"
+              title="Copy link"
+              aria-label={`Copy link for ${entry.name}`}
+              onClick={async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!copyUrl) {
+                  return;
+                }
+
+                const absoluteUrl = withBaseUrl(
+                  window.location.origin,
+                  copyUrl,
+                );
+                await navigator.clipboard.writeText(absoluteUrl);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              <i
+                className={`bi ${copied ? "bi-clipboard-check text-success" : "bi-clipboard"}`}
+              />
+            </button>
+          </div>
         </div>
       </a>
     </div>
@@ -174,7 +175,10 @@ function UploadProgressList({ items }: { items: UploadStatus[] }) {
               : "bi bi-x-circle-fill text-danger";
 
         return (
-          <div key={item.id} className="d-flex align-items-center gap-2 small mb-2">
+          <div
+            key={item.id}
+            className="d-flex align-items-center gap-2 small mb-2"
+          >
             {item.status === "uploading" ? (
               <span className={icon} role="status" aria-hidden="true" />
             ) : (
@@ -237,12 +241,15 @@ export function FileBrowser({
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputId = useMemo(
-    () => `file-browser-input-${model.hubId}-${model.currentPath.replaceAll("/", "-") || "root"}`,
+    () =>
+      `file-browser-input-${model.hubId}-${model.currentPath.replaceAll("/", "-") || "root"}`,
     [model.currentPath, model.hubId],
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  async function handleCreateFolderSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreateFolderSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
     if (!onCreateFolder) {
       return;
     }
@@ -397,7 +404,11 @@ export function FileBrowser({
                   >
                     Отмена
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={isFolderSubmitting}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isFolderSubmitting}
+                  >
                     {isFolderSubmitting ? "Создание..." : "Создать"}
                   </button>
                 </div>
@@ -455,7 +466,9 @@ export function FileBrowser({
         ) : null}
 
         <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-4">
-          {model.entries.map((entry) => renderEntry(entry, baseUrl, historyMode, onNavigate))}
+          {model.entries.map((entry) =>
+            renderEntry(entry, baseUrl, historyMode, onNavigate),
+          )}
         </div>
       </div>
     </div>

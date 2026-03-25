@@ -34,8 +34,10 @@ export const sampleBrowserModel: FileBrowserViewModel = {
       isDirectory: false,
       isImage: true,
       relativePath: "Библиотека/poster.png",
-      downloadUrl: "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fposter.png",
-      copyUrl: "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fposter.png",
+      downloadUrl:
+        "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fposter.png",
+      copyUrl:
+        "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fposter.png",
       previewUrl: SAMPLE_PREVIEW_DATA_URL,
     },
     {
@@ -43,8 +45,10 @@ export const sampleBrowserModel: FileBrowserViewModel = {
       isDirectory: false,
       isImage: false,
       relativePath: "Библиотека/programme.pdf",
-      downloadUrl: "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fprogramme.pdf",
-      copyUrl: "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fprogramme.pdf",
+      downloadUrl:
+        "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fprogramme.pdf",
+      copyUrl:
+        "/upload/42/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%2Fprogramme.pdf",
     },
   ],
 };

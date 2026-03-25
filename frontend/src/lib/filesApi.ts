@@ -117,12 +117,17 @@ function parseMutationPayload(payload: unknown) {
   }
 
   return {
-    message: readOptionalString(payload, "message") ?? "Произошла ошибка при обработке запроса.",
+    message:
+      readOptionalString(payload, "message") ??
+      "Произошла ошибка при обработке запроса.",
     fieldErrors: parseFieldErrors(payload.field_errors),
   };
 }
 
-async function performMutation(url: string, init: RequestInit): Promise<MutationResult> {
+async function performMutation(
+  url: string,
+  init: RequestInit,
+): Promise<MutationResult> {
   const response = await fetch(url, {
     ...init,
     credentials: "include",
@@ -186,7 +191,10 @@ function parseBrowserEntry(entry: unknown, baseUrl: string): FileBrowserEntry {
   };
 }
 
-function parseBrowserData(payload: unknown, baseUrl: string): FileBrowserApiResponse {
+function parseBrowserData(
+  payload: unknown,
+  baseUrl: string,
+): FileBrowserApiResponse {
   if (!isRecord(payload) || !Array.isArray(payload.entries)) {
     throw new Error("Invalid file-browser payload.");
   }
@@ -211,8 +219,11 @@ export async function fetchFileBrowserData(
   return parseBrowserData(payload, baseUrl);
 }
 
-export async function bootstrapFilesPage(baseUrl: string): Promise<FilesPageBootstrapData> {
-  const initialPath = new URLSearchParams(window.location.search).get("path") ?? "";
+export async function bootstrapFilesPage(
+  baseUrl: string,
+): Promise<FilesPageBootstrapData> {
+  const initialPath =
+    new URLSearchParams(window.location.search).get("path") ?? "";
   const [shell, browser] = await Promise.all([
     fetchShellData(baseUrl),
     fetchFileBrowserData(baseUrl, initialPath),
@@ -228,7 +239,9 @@ export async function bootstrapFilesPage(baseUrl: string): Promise<FilesPageBoot
   };
 }
 
-export function toViewModel(data: FileBrowserApiResponse): FileBrowserViewModel {
+export function toViewModel(
+  data: FileBrowserApiResponse,
+): FileBrowserViewModel {
   return {
     hubId: data.hubId,
     currentPath: data.currentPath,

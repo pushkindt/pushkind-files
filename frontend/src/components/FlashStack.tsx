@@ -20,7 +20,11 @@ export function FlashStack({
   return (
     <div className="mb-3" id="flashMessages">
       {flashes.map((flash) => (
-        <div key={flash.id} className={`alert alert-${flash.category} alert-dismissible`} role="alert">
+        <div
+          key={flash.id}
+          className={`alert alert-${flash.category} alert-dismissible`}
+          role="alert"
+        >
           {flash.message}
           <button
             type="button"

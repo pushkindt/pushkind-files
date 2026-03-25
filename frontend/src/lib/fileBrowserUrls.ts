@@ -38,7 +38,10 @@ export function buildBrowserUrl(baseUrl: string, path: string) {
     return withBaseUrl(baseUrl, path);
   }
   if (path) {
-    return withBaseUrl(baseUrl, `/files/browser?path=${encodeURIComponent(path)}`);
+    return withBaseUrl(
+      baseUrl,
+      `/files/browser?path=${encodeURIComponent(path)}`,
+    );
   }
 
   return withBaseUrl(baseUrl, "/files/browser");
@@ -54,7 +57,10 @@ export function buildMainPageUrl(baseUrl: string, path: string) {
 
 export function buildUploadUrl(baseUrl: string, path: string) {
   if (path) {
-    return withBaseUrl(baseUrl, `/files/upload?path=${encodeURIComponent(path)}`);
+    return withBaseUrl(
+      baseUrl,
+      `/files/upload?path=${encodeURIComponent(path)}`,
+    );
   }
 
   return withBaseUrl(baseUrl, "/files/upload");
@@ -62,14 +68,24 @@ export function buildUploadUrl(baseUrl: string, path: string) {
 
 export function buildCreateFolderUrl(baseUrl: string, path: string) {
   if (path) {
-    return withBaseUrl(baseUrl, `/folder/create?path=${encodeURIComponent(path)}`);
+    return withBaseUrl(
+      baseUrl,
+      `/folder/create?path=${encodeURIComponent(path)}`,
+    );
   }
 
   return withBaseUrl(baseUrl, "/folder/create");
 }
 
-export function buildFileDownloadUrl(baseUrl: string, hubId: number, relativePath: string) {
-  return withBaseUrl(baseUrl, `/upload/${hubId}/${encodeURIComponent(relativePath)}`);
+export function buildFileDownloadUrl(
+  baseUrl: string,
+  hubId: number,
+  relativePath: string,
+) {
+  return withBaseUrl(
+    baseUrl,
+    `/upload/${hubId}/${encodeURIComponent(relativePath)}`,
+  );
 }
 
 export function buildIamApiUrl(baseUrl: string) {
@@ -78,7 +94,10 @@ export function buildIamApiUrl(baseUrl: string) {
 
 export function buildEntriesApiUrl(baseUrl: string, path: string) {
   if (path) {
-    return withBaseUrl(baseUrl, `/api/v1/files/entries?path=${encodeURIComponent(path)}`);
+    return withBaseUrl(
+      baseUrl,
+      `/api/v1/files/entries?path=${encodeURIComponent(path)}`,
+    );
   }
 
   return withBaseUrl(baseUrl, "/api/v1/files/entries");

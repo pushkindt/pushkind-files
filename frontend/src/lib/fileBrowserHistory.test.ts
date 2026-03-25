@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parsePathFromSearch,
-  updatePathInUrl,
-} from "./fileBrowserHistory";
+import { parsePathFromSearch, updatePathInUrl } from "./fileBrowserHistory";
 
 describe("fileBrowserHistory", () => {
   it("parses path from the query string", () => {

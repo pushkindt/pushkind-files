@@ -68,10 +68,14 @@ describe("FileBrowser", () => {
     expect(form).toBeInstanceOf(HTMLFormElement);
 
     await act(async () => {
-      form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      form?.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
+      );
     });
 
-    let submitButton = container.querySelector('[data-new-folder-form] button[type="submit"]');
+    let submitButton = container.querySelector(
+      '[data-new-folder-form] button[type="submit"]',
+    );
     expect(submitButton).toBeInstanceOf(HTMLButtonElement);
     expect((submitButton as HTMLButtonElement).disabled).toBe(true);
 
@@ -84,9 +88,13 @@ describe("FileBrowser", () => {
       (toggleButton as HTMLButtonElement).click();
     });
 
-    submitButton = container.querySelector('[data-new-folder-form] button[type="submit"]');
+    submitButton = container.querySelector(
+      '[data-new-folder-form] button[type="submit"]',
+    );
     expect(submitButton).toBeInstanceOf(HTMLButtonElement);
     expect((submitButton as HTMLButtonElement).disabled).toBe(false);
-    expect((submitButton as HTMLButtonElement).textContent).toContain("Создать");
+    expect((submitButton as HTMLButtonElement).textContent).toContain(
+      "Создать",
+    );
   });
 });

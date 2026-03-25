@@ -15,8 +15,10 @@ function parseNoAccessData(payload: unknown): NoAccessData {
     typeof (payload as { home_url?: unknown }).home_url !== "string" ||
     typeof (payload as { current_user?: unknown }).current_user !== "object" ||
     (payload as { current_user: { email?: unknown } }).current_user === null ||
-    typeof (payload as { current_user: { email?: unknown } }).current_user.email !== "string" ||
-    typeof (payload as { current_user: { name?: unknown } }).current_user.name !== "string"
+    typeof (payload as { current_user: { email?: unknown } }).current_user
+      .email !== "string" ||
+    typeof (payload as { current_user: { name?: unknown } }).current_user
+      .name !== "string"
   ) {
     throw new Error("Invalid no-access payload.");
   }
@@ -50,7 +52,9 @@ export function NoAccessPage() {
 
     async function load() {
       try {
-        const response = await fetch("/api/v1/no-access", { credentials: "include" });
+        const response = await fetch("/api/v1/no-access", {
+          credentials: "include",
+        });
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}.`);
         }
@@ -68,7 +72,10 @@ export function NoAccessPage() {
 
         setState({
           status: "error",
-          message: error instanceof Error ? error.message : "Не удалось загрузить страницу.",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить страницу.",
         });
       }
     }
@@ -109,10 +116,13 @@ export function NoAccessPage() {
     <main className="files-page-shell state-shell">
       <section className="card shadow-sm border-0 status-card">
         <div className="card-body p-4 p-md-5">
-          <p className="text-uppercase text-secondary small mb-2">Pushkind Files</p>
+          <p className="text-uppercase text-secondary small mb-2">
+            Pushkind Files
+          </p>
           <h1 className="h3 mb-3">Недостаточно прав для доступа к сервису</h1>
           <p className="text-secondary mb-4">
-            Пользователь <strong>{state.data.currentUser.name}</strong> не имеет роли <code>files</code>.
+            Пользователь <strong>{state.data.currentUser.name}</strong> не имеет
+            роли <code>files</code>.
           </p>
           <div className="d-flex flex-column flex-sm-row gap-2">
             <a className="btn btn-primary" href={state.data.homeUrl}>

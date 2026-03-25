@@ -4,7 +4,8 @@ import { sampleBrowserApiResponse } from "../lib/fileBrowserFixtures";
 import "../styles/files-page.css";
 
 export function EmbeddedBrowserBootstrap() {
-  const initialPath = new URLSearchParams(window.location.search).get("path") ?? "";
+  const initialPath =
+    new URLSearchParams(window.location.search).get("path") ?? "";
   const fixtureData = isFixtureMode() ? sampleBrowserApiResponse : undefined;
 
   return (
