@@ -253,31 +253,7 @@ export async function bootstrapFilesPage(
   const initialPath =
     new URLSearchParams(window.location.search).get("path") ?? "";
   const shell = await fetchShellData(baseUrl);
-  const [menuResult, browser] = await Promise.all(
-    [
-      fetchHubMenuItems(shell.homeUrl, shell.currentUser.hubId),
-      fetchFileBrowserData(baseUrl, initialPath),
-    ].map((promise, index) =>
-      index === 0
-        ? promise
-            .then((menu) => ({ ok: true as const, menu }))
-            .catch((error) => ({ ok: false as const, error }))
-        : promise,
-    ) as [
-      Promise<
-        { ok: true; menu: UserMenuItem[] } | { ok: false; error: unknown }
-      >,
-      Promise<FileBrowserApiResponse>,
-    ],
-  );
-
-  const menu = menuResult.ok ? menuResult.menu : [];
-  if (!menuResult.ok) {
-    console.warn(
-      "Failed to load auth navigation menu. Falling back to home link only.",
-      menuResult.error,
-    );
-  }
+  const browser = await fetchFileBrowserData(baseUrl, initialPath);
 
   return {
     baseUrl,
@@ -285,7 +261,7 @@ export async function bootstrapFilesPage(
     runtimeOwner: "react-shell",
     sharedBrowserComponent: "FileBrowser",
     shell,
-    menu,
+    menu: [],
     browser,
   };
 }
