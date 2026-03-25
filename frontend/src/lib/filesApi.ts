@@ -6,6 +6,7 @@ import type {
   FilesPageBootstrapData,
   FilesShellData,
   MutationResult,
+  UserMenuItem,
 } from "./fileBrowserModels";
 import {
   buildCreateFolderUrl,
@@ -206,6 +207,23 @@ function parseBrowserData(
   };
 }
 
+function parseMenuItems(payload: unknown): UserMenuItem[] {
+  if (!Array.isArray(payload)) {
+    throw new Error("Invalid menu payload.");
+  }
+
+  return payload.map((item) => {
+    if (!isRecord(item)) {
+      throw new Error("Invalid menu item payload.");
+    }
+
+    return {
+      name: readString(item, "name"),
+      url: readString(item, "url"),
+    };
+  });
+}
+
 export async function fetchShellData(baseUrl: string): Promise<FilesShellData> {
   const payload = await fetchJson(buildIamApiUrl(baseUrl));
   return parseShellData(payload);
@@ -219,15 +237,47 @@ export async function fetchFileBrowserData(
   return parseBrowserData(payload, baseUrl);
 }
 
+export async function fetchHubMenuItems(
+  authBaseUrl: string,
+  hubId: number,
+): Promise<UserMenuItem[]> {
+  const payload = await fetchJson(
+    withBaseUrl(authBaseUrl, `/api/v1/hubs/${hubId}/menu-items`),
+  );
+  return parseMenuItems(payload);
+}
+
 export async function bootstrapFilesPage(
   baseUrl: string,
 ): Promise<FilesPageBootstrapData> {
   const initialPath =
     new URLSearchParams(window.location.search).get("path") ?? "";
-  const [shell, browser] = await Promise.all([
-    fetchShellData(baseUrl),
-    fetchFileBrowserData(baseUrl, initialPath),
-  ]);
+  const shell = await fetchShellData(baseUrl);
+  const [menuResult, browser] = await Promise.all(
+    [
+      fetchHubMenuItems(shell.homeUrl, shell.currentUser.hubId),
+      fetchFileBrowserData(baseUrl, initialPath),
+    ].map((promise, index) =>
+      index === 0
+        ? promise
+            .then((menu) => ({ ok: true as const, menu }))
+            .catch((error) => ({ ok: false as const, error }))
+        : promise,
+    ) as [
+      Promise<
+        { ok: true; menu: UserMenuItem[] } | { ok: false; error: unknown }
+      >,
+      Promise<FileBrowserApiResponse>,
+    ],
+  );
+
+  const menu = menuResult.ok ? menuResult.menu : [];
+  if (!menuResult.ok) {
+    console.warn(
+      "Failed to load auth navigation menu. Falling back to home link only.",
+      menuResult.error,
+    );
+  }
 
   return {
     baseUrl,
@@ -235,6 +285,7 @@ export async function bootstrapFilesPage(
     runtimeOwner: "react-shell",
     sharedBrowserComponent: "FileBrowser",
     shell,
+    menu,
     browser,
   };
 }

@@ -2,6 +2,7 @@ import type {
   FileBrowserApiResponse,
   FileBrowserViewModel,
   FilesShellData,
+  UserMenuItem,
 } from "./fileBrowserModels";
 
 const SAMPLE_PREVIEW_DATA_URL =
@@ -67,3 +68,8 @@ export const sampleShellData: FilesShellData = {
   },
   homeUrl: "https://auth.example.com",
 };
+
+export const sampleMenuItems: UserMenuItem[] = [
+  { name: "CRM", url: "https://crm.example.com" },
+  { name: "Store", url: "https://store.example.com" },
+];
