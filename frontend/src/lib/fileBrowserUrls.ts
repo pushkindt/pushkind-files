@@ -33,20 +33,6 @@ export function withBaseUrl(baseUrl: string, path: string) {
   return `${normalizedBase}/${path}`;
 }
 
-export function buildBrowserUrl(baseUrl: string, path: string) {
-  if (path.startsWith("/")) {
-    return withBaseUrl(baseUrl, path);
-  }
-  if (path) {
-    return withBaseUrl(
-      baseUrl,
-      `/files/browser?path=${encodeURIComponent(path)}`,
-    );
-  }
-
-  return withBaseUrl(baseUrl, "/files/browser");
-}
-
 export function buildMainPageUrl(baseUrl: string, path: string) {
   if (path) {
     return withBaseUrl(baseUrl, `/?path=${encodeURIComponent(path)}`);

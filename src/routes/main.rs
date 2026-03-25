@@ -124,36 +124,6 @@ pub async fn index(
     }
 }
 
-/// Serve the React-owned embedded browser document for same-origin consumers.
-#[get("/files/browser")]
-pub async fn file_browser(
-    request: HttpRequest,
-    params: web::Query<IndexQueryParams>,
-    user: AuthenticatedUser,
-    app_config: web::Data<AppConfig>,
-) -> impl Responder {
-    let service = FileService::from_app_config(&app_config);
-    match service.validate_browser_access(&user, params.path.as_deref()) {
-        Ok(()) => {}
-        Err(ServiceError::Unauthorized) => return redirect("/na"),
-        Err(ServiceError::InvalidPath) => {
-            return HttpResponse::BadRequest().body("Invalid path");
-        }
-        Err(error) => {
-            log::error!("Failed to validate embedded file browser access: {error:?}");
-            return HttpResponse::InternalServerError().finish();
-        }
-    }
-
-    match open_frontend_html("assets/dist/app/browser.html").await {
-        Ok(file) => file.into_response(&request),
-        Err(error) => {
-            log::error!("Failed to open embedded browser frontend document: {error}");
-            HttpResponse::InternalServerError().finish()
-        }
-    }
-}
-
 /// Handle a file upload and save it to the user's directory.
 #[post("/files/upload")]
 pub async fn upload_files(
