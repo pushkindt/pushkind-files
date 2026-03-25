@@ -1,5 +1,8 @@
 //! Application services orchestrating domain logic and side effects.
+pub mod api;
 pub mod files;
+
+use crate::forms::FormError;
 
 /// Convenience alias for service results.
 pub type ServiceResult<T> = Result<T, ServiceError>;
@@ -10,7 +13,7 @@ pub enum ServiceError {
     #[error("missing required role")]
     Unauthorized,
     #[error("invalid form input: {0}")]
-    Validation(String),
+    Form(#[source] FormError),
     #[error("invalid path")]
     InvalidPath,
     #[error("invalid file name")]

@@ -86,6 +86,10 @@ impl RelativePath {
         &self.0
     }
 
+    pub fn to_path_string(&self) -> String {
+        self.0.to_string_lossy().into_owned()
+    }
+
     pub fn join(&self, child: &RelativePath) -> RelativePath {
         let mut combined = self.0.clone();
         combined.push(child.as_path());
@@ -140,6 +144,41 @@ impl FileName {
 }
 
 impl fmt::Display for FileName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+/// Sanitized folder name constrained to a single path component.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct FolderName(String);
+
+impl FolderName {
+    pub fn try_new(value: String) -> Result<Self, TypeConstraintError> {
+        let path = Path::new(&value);
+        let mut components = path.components();
+        match (components.next(), components.next()) {
+            (Some(std::path::Component::Normal(component)), None) => {
+                Ok(Self(component.to_string_lossy().to_string()))
+            }
+            _ => Err(TypeConstraintError::InvalidFolderName),
+        }
+    }
+
+    pub fn try_from_str(value: &str) -> Result<Self, TypeConstraintError> {
+        Self::try_new(value.to_string())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    pub fn as_relative_path(&self) -> RelativePath {
+        RelativePath::try_from_str(&self.0).expect("folder names are valid relative paths")
+    }
+}
+
+impl fmt::Display for FolderName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
@@ -253,6 +292,12 @@ mod tests {
     }
 
     #[test]
+    fn folder_name_rejects_nested() {
+        assert!(FolderName::try_new("foo/bar".to_string()).is_err());
+        assert!(FolderName::try_new("../evil".to_string()).is_err());
+    }
+
+    #[test]
     fn relative_path_rejects_parent() {
         assert!(RelativePath::try_new(PathBuf::from("../foo")).is_err());
     }
@@ -264,4 +309,6 @@ pub enum TypeConstraintError {
     InvalidPath,
     #[error("invalid file name")]
     InvalidFileName,
+    #[error("invalid folder name")]
+    InvalidFolderName,
 }

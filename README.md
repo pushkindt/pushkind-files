@@ -1,14 +1,14 @@
 # pushkind-files
 
 `pushkind-files` is the file management service that powers Pushkind hubs. It
-delivers a server-rendered file browser backed by per-hub storage, integrates
-with the Pushkind authentication flow, and exposes upload and folder management
+delivers a React-backed file browser backed by per-hub storage, integrates with
+the Pushkind authentication flow, and exposes upload and folder management
 capabilities for members who hold the appropriate service role.
 
 ## Features
 
 - **Per-hub storage isolation** – Each authenticated hub member works inside a dedicated directory under `./upload/{hub_id}`, guaranteeing users can only browse their own hub's files.
-- **Server-rendered file browser** – Folder contents are listed with directory-first sorting, inline image detection, and flash messaging for quick feedback.
+- **React-owned file browser** – Folder contents are listed with directory-first sorting, inline image detection, uploads, folder creation, and embedded rendering through the shared React browser.
 - **Secure uploads** – Multipart uploads accept files up to 10 MB, normalise file names, and reject attempts at path traversal before persisting to disk.
 - **Folder management** – Users can create nested folders after form validation, keeping the structure tidy without leaving the interface.
 - **Pushkind auth integration** – Access is gated by the `"files"` service role using `pushkind-common` helpers, preserving the shared login and authorization experience.
@@ -32,18 +32,18 @@ exercised and tested without going through the web framework:
 - **Forms (`src/forms`)** – `serde`/`validator` powered structs that handle
   request payload validation, CSV parsing, and transformation into domain types.
 - **Routes (`src/routes`)** – Actix Web handlers that wire HTTP requests into the
-  service layer and render Tera templates or redirect with flash messages.
-- **Templates (`templates/`)** – Server-rendered UI built with Tera and
-  Bootstrap 5
+  service layer, serve built frontend HTML, expose typed APIs, or redirect.
+- **Frontend (`frontend/`)** – Vite + React + TypeScript workspace that builds
+  the full-page and embedded browser documents into `assets/dist/`.
 
 ## Technology Stack
 
 - Rust 2024 edition
-- [Actix Web](https://actix.rs/) with identity, session, and flash message
-  middleware
+- [Actix Web](https://actix.rs/) with identity and session middleware
 - `actix-files` for serving uploaded assets and static resources
 - `actix-multipart` for handling file uploads with size limits
-- [Tera](https://tera.netlify.app/) templates styled with Bootstrap 5.3
+- [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/),
+  and [Vite](https://vite.dev/) for the files UI
 - [`pushkind-common`](https://github.com/pushkindt/pushkind-common) shared crate
   for authentication guards, configuration, and reusable helpers
 - Supporting crates: `validator`, `serde`, `uuid`, `env_logger`, and `dotenvy`
@@ -54,6 +54,63 @@ exercised and tested without going through the web framework:
 
 - Rust toolchain (install via [rustup](https://www.rust-lang.org/tools/install))
 - `cargo` available on your `PATH`
+- Node.js 24.x for the frontend workspace
+- `npm` available on your `PATH`
+
+### Frontend Tooling
+
+The React migration uses a standalone frontend workspace under `frontend/` that
+builds static assets into `assets/dist/`.
+
+If you use `mise`, install the pinned Node version from `mise.toml` with:
+
+```bash
+mise install
+```
+
+You can also install Node.js 24 manually with your preferred package manager or
+from [nodejs.org](https://nodejs.org/).
+
+Install frontend dependencies with:
+
+```bash
+cd frontend && npm install
+```
+
+Build the frontend assets with:
+
+```bash
+cd frontend && npm run build
+```
+
+The build writes hashed JavaScript, CSS, HTML, and `manifest.json` files into
+`assets/dist/`.
+
+Local startup expects a prior frontend build because both browser routes are
+served from built frontend HTML:
+
+```bash
+cd frontend && npm run build
+cargo run
+```
+
+If `assets/dist/index.html` or `assets/dist/browser.html` is missing, the
+corresponding route returns a server error with instructions to rebuild the
+frontend assets.
+
+The final runtime is:
+
+- `GET /` serves `assets/dist/index.html` after Rust access checks.
+- `GET /files/browser` serves `assets/dist/browser.html` after the same access
+  checks.
+- Both surfaces use the shared React browser component tree rooted at
+  `frontend/src/components/FileBrowser.tsx`.
+- Shell and directory data load from typed JSON APIs under `/api/v1/`.
+- Uploads and folder creation use structured JSON responses for React clients.
+- The embedded mount contract lives in
+  `frontend/src/lib/reactFileBrowserMount.tsx`.
+- `npm run playwright:screenshots` remains a placeholder in this environment
+  because authenticated screenshot capture is not available here.
 
 ### Configuration
 
@@ -67,11 +124,10 @@ Key settings you may want to override:
 
 | Environment variable | Description | Default |
 | --- | --- | --- |
-| `APP_SECRET` | 64-byte secret used to sign cookies and flash messages | _required_ |
+| `APP_SECRET` | 64-byte secret used to sign cookies and sessions | _required_ |
 | `APP_ADDRESS` | Interface to bind | `127.0.0.1` |
 | `APP_PORT` | HTTP port | `80` (override to `8080` in local.yaml) |
 | `APP_DOMAIN` | Cookie domain (without protocol) | _required_ |
-| `APP_TEMPLATES_DIR` | Glob pattern for templates consumed by Tera | `templates/**/*` |
 | `APP_AUTH_SERVICE_URL` | URL of the Pushkind authentication service | _required_ |
 | `APP_UPLOAD_PATH` | Path to the upload folder | `./upload/` |
 
@@ -97,9 +153,9 @@ cargo run
 ```
 
 The server listens on `http://127.0.0.1:8080` by default, serves uploaded files
-from `/upload`, and renders the file browser template for authorized users. All
-routes are protected by the Pushkind authentication middleware and check that
-the signed-in member has the `"files"` service role.
+from `/upload`, and serves built frontend documents for both `GET /` and
+`GET /files/browser`. All routes are protected by the Pushkind authentication
+middleware and check that the signed-in member has the `"files"` service role.
 
 ## Quality Gates
 

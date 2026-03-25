@@ -12,13 +12,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      - name: Build frontend assets
+        working-directory: ./frontend
+        run: npm run build
       - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --all-features
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pushkind-files-frontend-dist
+          path: ./assets/dist
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: pushkind-files
@@ -32,6 +48,10 @@ jobs:
         with:
           name: pushkind-files
           path: ./target/release/
+      - uses: actions/download-artifact@v4
+        with:
+          name: pushkind-files-frontend-dist
+          path: ./assets/dist/
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -45,5 +65,4 @@ jobs:
           scp ./target/release/pushkind-files cicd@images.pushkind.com:/var/www4/html/
           scp -r ./config/ cicd@images.pushkind.com:/var/www4/html/
           scp -r ./assets/ cicd@images.pushkind.com:/var/www4/html/
-          scp -r ./templates/ cicd@images.pushkind.com:/var/www4/html/
           ssh cicd@images.pushkind.com "sudo /usr/bin/systemctl start pushkind-files.service"
