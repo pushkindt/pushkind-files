@@ -1,3 +1,5 @@
-domain: test.me
-port: 8080
-auth_service_url: "http://auth3.test.me:8081"
+server:
+  port: 8080
+app:
+  domain: test.me
+  auth_service_url: "http://auth3.test.me:8081"

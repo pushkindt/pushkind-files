@@ -1,3 +1,5 @@
-domain: pushkind.com
-port: 9004
-auth_service_url: "https://users.pushkind.com"
+server:
+  port: 9004
+app:
+  domain: pushkind.com
+  auth_service_url: "https://users.pushkind.com"

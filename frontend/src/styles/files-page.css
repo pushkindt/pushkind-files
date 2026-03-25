@@ -1,0 +1,90 @@
+:root {
+  color: #212529;
+  background: #f8f9fa;
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f8f9fa;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.files-page-shell {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.state-shell {
+  display: grid;
+  align-content: center;
+  padding: 1.5rem;
+}
+
+.status-card {
+  width: min(100%, 44rem);
+  margin: 0 auto;
+  border-radius: 1.5rem;
+}
+
+.file-icon {
+  font-size: 2rem;
+}
+
+.folder-icon {
+  color: #f0ad4e;
+}
+
+.file-card:hover {
+  background-color: #f8f9fa;
+}
+
+.dropzone {
+  border: 2px dashed #6c757d;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 2rem;
+  background: #fff;
+}
+
+.dropzone.dragover {
+  background-color: #f1f3f5;
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+
+a.card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.shared-file-preview {
+  max-height: 120px;
+  object-fit: cover;
+}
+
+@media (max-width: 720px) {
+  .status-card {
+    border-radius: 1rem;
+  }
+}

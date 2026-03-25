@@ -4,15 +4,16 @@ use std::time::SystemTime;
 use actix_multipart::form::tempfile::TempFile;
 use pushkind_common::domain::auth::AuthenticatedUser;
 use pushkind_common::routes::check_role;
+use urlencoding::encode;
 use uuid::Uuid;
-use validator::Validate;
 
 use crate::SERVICE_ACCESS_ROLE;
 use crate::domain::{
     EntryKind, FileName, HubId, HubStorage, RelativePath, StorageEntry, UploadRoot,
 };
-use crate::dto::FileEntryDto;
-use crate::forms::main::CreateFolderForm;
+use crate::dto::{FileBrowserDataDto, FileBrowserEntryApiDto, FileEntryDto};
+use crate::forms::main::CreateFolderPayload;
+use crate::models::config::AppConfig;
 use crate::services::{ServiceError, ServiceResult};
 
 /// Service responsible for file system operations inside a hub's storage.
@@ -24,6 +25,12 @@ pub struct FileService {
 impl FileService {
     pub fn new(upload_root: UploadRoot) -> Self {
         Self { upload_root }
+    }
+
+    pub fn from_app_config(app_config: &AppConfig) -> Self {
+        Self::new(UploadRoot::from(
+            std::path::Path::new(&app_config.upload_path).to_path_buf(),
+        ))
     }
 
     fn sanitize_path_param(path: Option<&str>) -> ServiceResult<RelativePath> {
@@ -51,21 +58,29 @@ impl FileService {
         }
     }
 
+    /// Validate that the user may access the file browser for the provided path.
+    pub fn validate_browser_access(
+        &self,
+        user: &AuthenticatedUser,
+        relative: Option<&str>,
+    ) -> ServiceResult<()> {
+        self.authorize(user)?;
+        Self::sanitize_path_param(relative)?;
+        Ok(())
+    }
+
     fn ensure_hub_root(&self, storage: &HubStorage) -> ServiceResult<()> {
         fs::create_dir_all(storage.hub_root()).map_err(ServiceError::StorageSetup)
     }
 
-    /// List entries for the given relative path, returning DTOs for rendering.
-    pub fn list_entries(
+    fn list_storage_entries(
         &self,
-        user: &AuthenticatedUser,
-        relative: Option<&str>,
-    ) -> ServiceResult<Vec<FileEntryDto>> {
-        let storage = self.authorize(user)?;
-        let relative = Self::sanitize_path_param(relative)?;
-        self.ensure_hub_root(&storage)?;
+        storage: &HubStorage,
+        relative: &RelativePath,
+    ) -> ServiceResult<Vec<StorageEntry>> {
+        self.ensure_hub_root(storage)?;
 
-        let target_path = storage.resolve_dir(&relative);
+        let target_path = storage.resolve_dir(relative);
         if !target_path.exists() {
             return Ok(vec![]);
         }
@@ -126,10 +141,62 @@ impl FileService {
             }
         });
 
-        Ok(entries
-            .into_iter()
-            .map(|(entry, _)| FileEntryDto::from(entry))
-            .collect())
+        Ok(entries.into_iter().map(|(entry, _)| entry).collect())
+    }
+
+    /// List entries for the given relative path, returning DTOs for rendering.
+    pub fn list_entries(
+        &self,
+        user: &AuthenticatedUser,
+        relative: Option<&str>,
+    ) -> ServiceResult<Vec<FileEntryDto>> {
+        let storage = self.authorize(user)?;
+        let relative = Self::sanitize_path_param(relative)?;
+        let entries = self.list_storage_entries(&storage, &relative)?;
+
+        Ok(entries.into_iter().map(FileEntryDto::from).collect())
+    }
+
+    pub fn list_browser_data(
+        &self,
+        user: &AuthenticatedUser,
+        relative: Option<&str>,
+    ) -> ServiceResult<FileBrowserDataDto> {
+        let storage = self.authorize(user)?;
+        let relative = Self::sanitize_path_param(relative)?;
+        let current_path = relative.to_path_string();
+        let entries = self.list_storage_entries(&storage, &relative)?;
+
+        Ok(FileBrowserDataDto {
+            hub_id: user.hub_id,
+            current_path: current_path.clone(),
+            entries: entries
+                .into_iter()
+                .map(|entry| {
+                    let entry_name = entry.name().as_str().to_owned();
+                    let relative_path = if current_path.is_empty() {
+                        entry_name.clone()
+                    } else {
+                        format!("{current_path}/{}", entry.name().as_str())
+                    };
+                    let encoded_relative_path = encode(&relative_path).into_owned();
+                    let download_url = format!("/upload/{}/{}", user.hub_id, encoded_relative_path);
+                    let is_directory = entry.is_directory();
+                    let is_image = entry.is_image();
+
+                    FileBrowserEntryApiDto {
+                        name: entry_name,
+                        is_directory,
+                        is_image,
+                        relative_path: relative_path.clone(),
+                        navigation_path: is_directory.then_some(relative_path),
+                        download_url: (!is_directory).then_some(download_url.clone()),
+                        copy_url: (!is_directory).then_some(download_url.clone()),
+                        preview_url: (!is_directory && is_image).then_some(download_url),
+                    }
+                })
+                .collect(),
+        })
     }
 
     /// Create a folder (and parents) within the hub storage.
@@ -137,17 +204,13 @@ impl FileService {
         &self,
         user: &AuthenticatedUser,
         current_path: Option<&str>,
-        form: &CreateFolderForm,
+        payload: CreateFolderPayload,
     ) -> ServiceResult<()> {
-        form.validate()
-            .map_err(|e| ServiceError::Validation(e.to_string()))?;
-
         let storage = self.authorize(user)?;
         self.ensure_hub_root(&storage)?;
 
         let current_path = Self::sanitize_path_param(current_path)?;
-        let new_path = RelativePath::try_from_str(&form.name)
-            .map_err(|_| ServiceError::Validation("Недопустимое имя папки".into()))?;
+        let new_path = payload.name.as_relative_path();
         let combined = current_path.join(&new_path);
 
         let path = storage.resolve_dir(&combined);
@@ -187,6 +250,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
+    use crate::forms::main::CreateFolderForm;
     use pushkind_common::domain::auth::AuthenticatedUser;
     use tempfile::{NamedTempFile, tempdir};
 
@@ -295,11 +359,14 @@ mod tests {
             roles: vec![SERVICE_ACCESS_ROLE.to_string()],
             exp: 0,
         };
-        let form = CreateFolderForm {
+        let payload = CreateFolderPayload::try_from(CreateFolderForm {
             name: "beta".to_string(),
-        };
+        })
+        .unwrap();
 
-        service.create_folder(&user, Some("alpha"), &form).unwrap();
+        service
+            .create_folder(&user, Some("alpha"), payload)
+            .unwrap();
 
         let storage = service.storage_for_hub(HubId::from(5));
         assert!(
@@ -369,11 +436,21 @@ mod tests {
         let err = service.list_entries(&user, None).unwrap_err();
         assert!(matches!(err, ServiceError::Unauthorized));
 
-        let form = CreateFolderForm {
+        let payload = CreateFolderPayload::try_from(CreateFolderForm {
             name: "".to_string(),
-        };
-        let err = service.create_folder(&user, None, &form).unwrap_err();
-        assert!(matches!(err, ServiceError::Validation(_)));
+        })
+        .unwrap_err();
+        assert!(matches!(
+            payload,
+            crate::forms::FormError::MissingFolderName
+        ));
+
+        let payload = CreateFolderPayload::try_from(CreateFolderForm {
+            name: "safe".to_string(),
+        })
+        .unwrap();
+        let err = service.create_folder(&user, None, payload).unwrap_err();
+        assert!(matches!(err, ServiceError::Unauthorized));
     }
 
     #[test]
@@ -388,13 +465,41 @@ mod tests {
             roles: vec![SERVICE_ACCESS_ROLE.to_string()],
             exp: 0,
         };
-        let form = CreateFolderForm {
+        let payload = CreateFolderPayload::try_from(CreateFolderForm {
             name: "safe".to_string(),
-        };
+        })
+        .unwrap();
 
         let err = service
-            .create_folder(&user, Some("../outside"), &form)
+            .create_folder(&user, Some("../outside"), payload)
             .unwrap_err();
         assert!(matches!(err, ServiceError::InvalidPath));
+    }
+
+    #[test]
+    fn create_folder_trims_form_name_before_creating_directory() {
+        let dir = tempdir().unwrap();
+        let service = build_service(dir.path().to_path_buf());
+        let user = AuthenticatedUser {
+            sub: "user".into(),
+            email: "user@example.com".into(),
+            hub_id: 3,
+            name: "User".into(),
+            roles: vec![SERVICE_ACCESS_ROLE.to_string()],
+            exp: 0,
+        };
+        let payload = CreateFolderPayload::try_from(CreateFolderForm {
+            name: "  gallery  ".to_string(),
+        })
+        .unwrap();
+
+        service.create_folder(&user, None, payload).unwrap();
+
+        let storage = service.storage_for_hub(HubId::from(3));
+        assert!(
+            storage
+                .resolve_dir(&RelativePath::try_from_str("gallery").unwrap())
+                .exists()
+        );
     }
 }

@@ -31,3 +31,11 @@ cargo fmt --all -- --check
 - Add tests for new service/form logic; use Diesel migrations and helpers for DB work.
 - Use `src/repository/mock.rs` to isolate service tests from Diesel.
 - Ensure new functionality is covered before PRs.
+
+## Workflow Requirements
+
+- Always obey `SPEC.md`.
+- For any new work, require both `specs/features/<name>.md` and
+  `plans/<name>.md`.
+- If a change touches architecture, add or update an ADR under
+  `specs/decisions/`.
