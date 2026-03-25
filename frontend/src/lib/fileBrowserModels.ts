@@ -48,6 +48,11 @@ export type FilesShellData = {
   homeUrl: string;
 };
 
+export type UserMenuItem = {
+  name: string;
+  url: string;
+};
+
 export type FileBrowserApiResponse = {
   hubId: number;
   currentPath: string;
@@ -60,6 +65,7 @@ export type FilesPageBootstrapData = {
   runtimeOwner: "react-shell";
   sharedBrowserComponent: "FileBrowser";
   shell: FilesShellData;
+  menu: UserMenuItem[];
   browser: FileBrowserApiResponse;
 };
 

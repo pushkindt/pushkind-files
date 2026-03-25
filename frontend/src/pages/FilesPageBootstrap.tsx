@@ -10,6 +10,7 @@ import { bootstrapFilesPage } from "../lib/bootstrapFilesPage";
 import { isFixtureMode } from "../lib/fixtureMode";
 import {
   sampleBrowserApiResponse,
+  sampleMenuItems,
   sampleShellData,
 } from "../lib/fileBrowserFixtures";
 import {
@@ -45,6 +46,7 @@ export function FilesPageBootstrap() {
               runtimeOwner: "react-shell" as const,
               sharedBrowserComponent: "FileBrowser" as const,
               shell: sampleShellData,
+              menu: sampleMenuItems,
               browser: sampleBrowserApiResponse,
             }
           : await bootstrapFilesPage("");
@@ -172,7 +174,7 @@ export function FilesPageBootstrap() {
 
   return (
     <FilesAppShell
-      userMenu={<UserMenu shell={state.data.shell} />}
+      userMenu={<UserMenu shell={state.data.shell} items={state.data.menu} />}
       flashes={<FlashStack />}
     >
       <FileBrowser
