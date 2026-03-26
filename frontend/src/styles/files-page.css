@@ -57,6 +57,18 @@ body {
   background-color: #f8f9fa;
 }
 
+.file-card-preview {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.file-card-name-row {
+  margin-top: auto;
+}
+
 .dropzone {
   border: 2px dashed #6c757d;
   border-radius: 10px;
