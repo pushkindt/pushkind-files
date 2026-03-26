@@ -77,6 +77,12 @@ async function fetchJson(url: string) {
   return response.json();
 }
 
+export const browserLocation = {
+  assign(url: string) {
+    window.location.assign(url);
+  },
+};
+
 async function readResponseJson(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -84,6 +90,11 @@ async function readResponseJson(response: Response) {
   }
 
   return response.json();
+}
+
+function handleAuthRedirectResponse(response: Response): never {
+  browserLocation.assign(response.url);
+  throw new Error("Сессия истекла. Выполняется переход на страницу входа.");
 }
 
 function parseFieldErrors(payload: unknown): FieldErrors {
@@ -137,6 +148,14 @@ async function performMutation(
       ...(init.headers ?? {}),
     },
   });
+
+  if (response.redirected) {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      handleAuthRedirectResponse(response);
+    }
+  }
+
   const payload = parseMutationPayload(await readResponseJson(response));
 
   if (response.ok) {
