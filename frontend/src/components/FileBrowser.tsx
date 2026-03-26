@@ -125,17 +125,19 @@ function FileCard({ entry }: { entry: FileBrowserEntry }) {
   return (
     <div className="col">
       <a href={downloadUrl} className="card-link" download>
-        <div className="card file-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-          {entry.isImage ? (
-            <img
-              src={previewUrl}
-              className="img-fluid rounded mb-2 shared-file-preview"
-              alt="preview"
-            />
-          ) : (
-            <div className="file-icon mb-2">📄</div>
-          )}
-          <div className="d-flex justify-content-center align-items-center gap-2">
+        <div className="card file-card text-center p-3 h-100 d-flex flex-column">
+          <div className="file-card-preview">
+            {entry.isImage ? (
+              <img
+                src={previewUrl}
+                className="img-fluid rounded mb-2 shared-file-preview"
+                alt="preview"
+              />
+            ) : (
+              <div className="file-icon mb-2">📄</div>
+            )}
+          </div>
+          <div className="file-card-name-row d-flex justify-content-center align-items-center gap-2">
             <div
               className="text-truncate"
               style={{ maxWidth: "calc(100% - 36px)" }}
