@@ -33,8 +33,8 @@ from runtime paths.
   state.
 - New GET endpoints introduced for React-owned page data WILL be versioned
   under `/api/v1/`.
-- HTML fragment fetching from `/files/browser` WILL be removed and replaced by
-  structured JSON data loading.
+- HTML fragment fetching from the legacy embedded-browser compatibility flow
+  WILL be removed and replaced by structured JSON data loading.
 - Validation copy for React-owned forms WILL live in `src/forms`.
 - Tera WILL be used only as a temporary migration wrapper and WILL be removable
   from the top-level page once the full-page route is React-backed.
@@ -142,7 +142,7 @@ The frontend package MUST expose at least these scripts:
 ### Structured Browser Data
 - Introduce a typed structured response for browser refresh/navigation data so
   React no longer has to fetch HTML fragments to update directory contents.
-- Keep `/files/browser` as a React-owned embedded browser route with the same
+- Keep the embedded browser compatibility surface React-owned with the same
   mount contract and base-URL behavior.
 
 ### Server-Rendered Shell During Migration
@@ -265,7 +265,7 @@ Exit criteria:
 ### Phase 6: Main Page And Embedded Browser Rollout
 Deliverables:
 - React-backed `/` page using the shared browser component.
-- React-backed `/files/browser` route for embedded usage.
+- React-backed embedded browser compatibility document for embedded usage.
 - Preserved copy-link behavior, file previews, and download links.
 - Playwright screenshot baselines for main page and embedded browser states.
 

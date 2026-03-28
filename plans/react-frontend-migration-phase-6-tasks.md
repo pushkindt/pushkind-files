@@ -10,8 +10,9 @@ This task file covers only Phase 6 from
 - screenshot-based visual parity coverage for the main page and embedded browser
 
 Do not start Phase 7 or later phases in this file. Phase 6 is complete only
-when both `GET /` and `GET /files/browser` render through the shared React
-browser with working interactions and screenshot baselines, while legacy Tera
+when both the main files page and the embedded browser compatibility document
+render through the shared React browser with working interactions and
+screenshot baselines, while legacy Tera
 browser fragment removal and `assets/filebrowser.js` deletion remain deferred
 to the cleanup phase.
 
@@ -31,7 +32,8 @@ to the cleanup phase.
 
 ## Deliverables
 - `GET /` remains React-backed through the shared browser component.
-- `GET /files/browser` becomes React-backed for embedded usage.
+- The embedded browser compatibility document becomes React-backed for embedded
+  usage.
 - Copy-link behavior, previews, downloads, navigation, upload, and folder
   creation continue to work on both surfaces.
 - Embedded mode preserves `baseUrl` and keeps history mutation disabled.
@@ -40,12 +42,13 @@ to the cleanup phase.
 
 ## Task 1: Audit The Remaining Runtime Split
 Goal:
-identify the exact legacy/runtime seams that still keep `/files/browser` on the
-old path and define the minimal rollout needed for Phase 6.
+identify the exact legacy/runtime seams that still keep the embedded browser
+compatibility surface on the old path and define the minimal rollout needed for
+Phase 6.
 
 Steps:
-1. Inspect the current `/files/browser` route, legacy template fragment, and
-   `assets/filebrowser.js` usage.
+1. Inspect the current embedded browser compatibility surface, legacy template
+   fragment, and `assets/filebrowser.js` usage.
 2. Identify which responsibilities are already covered by the shared React
    browser and which still depend on legacy glue.
 3. Decide whether the route should:
@@ -64,14 +67,14 @@ Acceptance checks:
 - The remaining rollout boundary is explicit in code and plan.
 - Phase 6 implementation can proceed without ambiguity about route ownership.
 
-## Task 2: Cut `/files/browser` Over To The Shared React Browser
+## Task 2: Cut The Embedded Browser Compatibility Surface Over To The Shared React Browser
 Goal:
 make the embedded browser route render through the React/browser data flow
 instead of the legacy Tera fragment.
 
 Steps:
-1. Update the backend route for `GET /files/browser` to serve the new React
-   embedded surface.
+1. Update the embedded browser compatibility surface to serve the new React
+   embedded runtime.
 2. Keep the same authentication and `"files"` access semantics as the existing
    route.
 3. Preserve support for the optional `path` parameter.
@@ -82,12 +85,13 @@ Steps:
 
 Constraints:
 - Do not move embedded authorization checks into frontend code.
-- Do not introduce client-side route ownership for `/files/browser`.
+- Do not introduce client-side route ownership for the embedded browser
+  compatibility surface.
 - Do not remove the legacy assets in this phase even if the route no longer
   uses them.
 
 Acceptance checks:
-- `GET /files/browser` is React-backed.
+- The embedded browser compatibility document is React-backed.
 - The route preserves existing auth and path-validation behavior.
 - Tests cover the new route behavior.
 
@@ -121,8 +125,8 @@ ensure the same shared browser behavior works on the main page and the embedded
 route without one-off divergence.
 
 Steps:
-1. Reuse the shared `FileBrowser` component for both `GET /` and
-   `GET /files/browser`.
+1. Reuse the shared `FileBrowser` component for both `GET /` and the embedded
+   browser compatibility document.
 2. Verify that navigation, upload, folder creation, copy-link actions, image
    previews, and download links all work in both contexts.
 3. Keep browser state/data loading driven by the shared frontend client layer.
@@ -230,7 +234,8 @@ make the final pre-cleanup frontend runtime understandable to contributors.
 
 Steps:
 1. Update `README.md` to describe the Phase 6 runtime state.
-2. Document that both `GET /` and `GET /files/browser` are now React-backed.
+2. Document that both the main files page and the embedded browser
+   compatibility document are now React-backed.
 3. Document where the embedded mount API and compatibility wrapper live.
 4. Document that legacy asset/template removal is still deferred to Phase 7.
 
@@ -268,7 +273,8 @@ What to confirm:
 Mark Phase 6 done only if all of the following are true:
 
 - `GET /` remains React-backed through the shared browser.
-- `GET /files/browser` is React-backed for embedded usage.
+- the embedded browser compatibility document is React-backed for embedded
+  usage
 - Main-page and embedded browser interactions both work end to end.
 - `baseUrl` semantics are preserved for embedded usage.
 - Screenshot baselines exist for the main page and embedded browser.

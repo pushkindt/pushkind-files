@@ -46,7 +46,6 @@ All authenticated routes are mounted under the root scope and use
 | Method | Path | Description |
 | --- | --- | --- |
 | GET | `/` | Serve the main React file browser page for the authenticated hub member. |
-| GET | `/files/browser` | Serve the embeddable React browser document for an optional `path`. |
 | POST | `/files/upload` | Upload a single file into the current hub directory. |
 | POST | `/folder/create` | Create a folder under the current hub directory. |
 | POST | `/logout` | Logout via shared `pushkind_common` route. |
@@ -88,10 +87,10 @@ All authenticated routes are mounted under the root scope and use
 4. Create the directory tree under the hub storage root.
 
 ## UI Surface
-- `assets/dist/index.html` renders the authenticated full-page files document
-  after Rust access checks succeed.
-- `assets/dist/browser.html` renders the embeddable browser document exposed by
-  `GET /files/browser`.
+- `assets/dist/app/index.html` renders the authenticated full-page files
+  document after Rust access checks succeed.
+- `assets/dist/app/browser.html` remains available as the embeddable browser
+  compatibility document loaded by `assets/filebrowser.js`.
 - The shared React browser owns directory navigation, drag-and-drop uploads,
   upload progress feedback, folder creation, clipboard copying, and optional
   history handling.

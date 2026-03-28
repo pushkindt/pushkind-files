@@ -28,7 +28,8 @@ later phases.
   Rust service code.
 - Preserve current upload and folder semantics unless this phase explicitly
   changes the transport shape to structured JSON.
-- Do not cut `/files/browser` over to React in this phase.
+- Do not cut the embedded browser compatibility surface over to React in this
+  phase.
 
 ## Deliverables
 - The main React file browser exposes upload UI again with drag-and-drop and
@@ -238,8 +239,8 @@ complete mutation infrastructure without prematurely cutting the embedded route
 over to the React runtime.
 
 Steps:
-1. Keep the live `/files/browser` route on its current runtime unless a thin
-   compatibility wrapper is required.
+1. Keep the live embedded browser compatibility surface on its current runtime
+   unless a thin compatibility wrapper is required.
 2. Make sure shared mutation helpers are written so embedded React usage can
    adopt them later.
 3. Preserve `baseUrl` compatibility in URL and client helpers where it matters
@@ -289,7 +290,8 @@ What to confirm:
 - upload and folder creation work through the React main page
 - field-level validation errors render correctly in the React UI
 - successful mutations refresh directory data through the typed API flow
-- `/files/browser` remains on the current rollout path
+- the embedded browser compatibility surface remains on the current rollout
+  path
 
 ## Phase 5 Exit Checklist
 Mark Phase 5 done only if all of the following are true:

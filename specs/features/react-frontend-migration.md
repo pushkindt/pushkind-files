@@ -63,7 +63,7 @@ Current client behavior is owned by:
 Current interactive behavior includes:
 - Directory navigation with `path` query synchronization and `popstate`
   handling on the main page.
-- HTML fragment fetching from `GET /files/browser`.
+- HTML fragment fetching from the legacy embedded-browser compatibility flow.
 - Drag-and-drop and file-input uploads to `POST /files/upload`.
 - Inline folder creation via `POST /folder/create`.
 - Clipboard copy for file URLs with a fallback copy mechanism.
@@ -72,7 +72,7 @@ Current interactive behavior includes:
 
 ## In Scope
 - The authenticated index page at `GET /`.
-- The embeddable file browser exposed by `GET /files/browser`.
+- The embeddable file browser compatibility document and mount flow.
 - Shared shell concerns currently handled in `templates/base.html`, including
   flash messages and Bootstrap lifecycle wiring.
 - File browser interactions: breadcrumb navigation, folder cards, file cards,
@@ -95,14 +95,15 @@ Current interactive behavior includes:
 
 ### 1. Rendering Model
 - The application MUST keep the existing server-owned route model.
-- The application MUST NOT introduce client-side routing for `/` or
-  `/files/browser`.
+- The application MUST NOT introduce client-side routing for `/` or the
+  embedded browser compatibility flow.
 - React MUST be introduced as page-level or widget-level components mounted on
   the existing URLs.
 - The long-term target MUST be:
   Vite-owned static HTML for `GET /`,
   React-owned page markup for the full files page,
-  and a React-owned embeddable file-browser widget for `/files/browser`.
+  and a React-owned embeddable file-browser widget exposed through the
+  compatibility document.
 - During migration, Tera MAY remain only until the React/Vite implementation is
   ready for cutover, but the target state MUST eliminate Rust-owned frontend
   document rendering for the top-level page.
@@ -140,8 +141,8 @@ Current interactive behavior includes:
 ### 5. Behavioral Parity
 - `GET /` MUST continue to render the authenticated files page with the current
   file browser surface and `path` handling.
-- `GET /files/browser` MUST continue to expose the browser UI for embedded or
-  partial-page use.
+- The embedded browser compatibility document MUST continue to expose the
+  browser UI for embedded or partial-page use.
 - Folder navigation MUST continue to support the current breadcrumb and card
   interactions.
 - Main-page navigation MUST continue to synchronize the `path` query parameter
@@ -187,7 +188,8 @@ Current interactive behavior includes:
   under React ownership.
 
 ### 9. Progressive Enhancement
-- Direct page loads for `/` and `/files/browser` MUST remain server-routed.
+- Direct page loads for `/` and the embedded browser compatibility document
+  MUST remain application-served without SPA routing.
 - File download links MUST remain normal links to `/upload/*`.
 - Uploads and folder creation MAY remain asynchronous client-side interactions,
   but backend validation and status semantics MUST stay authoritative.

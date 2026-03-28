@@ -136,7 +136,8 @@ Steps:
 5. Keep API client code reusable by both the top-level page and embedded mode.
 
 Constraints:
-- Do not reintroduce HTML fragment fetching from `/files/browser`.
+- Do not reintroduce HTML fragment fetching in the embedded browser
+  compatibility flow.
 - Do not hardcode document-specific assumptions into the API client.
 - Do not add mutation JSON handling yet.
 
@@ -162,7 +163,8 @@ Steps:
    body is now React/data-driven.
 
 Constraints:
-- Do not cut `/files/browser` over to React in this phase.
+- Do not cut the embedded browser compatibility surface over to React in this
+  phase.
 - Do not remove `assets/filebrowser.js` yet if it is still needed by the legacy
   embedded/browser path.
 - Do not add client-side routing.
@@ -189,7 +191,8 @@ Steps:
 
 Constraints:
 - Keep history mutation disabled when the browser runs in embedded mode.
-- Do not introduce SPA route ownership for `/` or `/files/browser`.
+- Do not introduce SPA route ownership for `/` or the embedded browser
+  compatibility surface.
 
 Acceptance checks:
 - Main-page folder navigation keeps `path` in sync with the URL.
@@ -208,13 +211,13 @@ Steps:
 3. Disable browser-history mutation when mounted in embedded mode.
 4. Ensure browser URLs, file-download links, and copy-link URLs still resolve
    relative to `baseUrl`.
-5. Keep the live `/files/browser` route on its current runtime for now if full
-   rollout is deferred to a later phase.
+5. Keep the live embedded browser compatibility surface on its current runtime
+   for now if full rollout is deferred to a later phase.
 
 Constraints:
-- Do not change the live `/files/browser` route to React here unless that
-  happens purely as an internal compatibility wrapper without changing the
-  public contract.
+- Do not change the live embedded browser compatibility surface to React here
+  unless that happens purely as an internal compatibility wrapper without
+  changing the public contract.
 - Do not break same-origin embedding.
 
 Acceptance checks:
@@ -299,6 +302,6 @@ Do not do these here:
 - add field-addressable validation JSON for mutations as the main goal
 - remove `assets/filebrowser.js`
 - delete Tera file-browser fragments
-- fully cut `/files/browser` over to React if rollout is deferred to a later
-  phase
+- fully cut the embedded browser compatibility surface over to React if rollout
+  is deferred to a later phase
 - add client-side routing or SPA navigation

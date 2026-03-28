@@ -86,23 +86,24 @@ cd frontend && npm run build
 The build writes hashed JavaScript, CSS, HTML, and `manifest.json` files into
 `assets/dist/`.
 
-Local startup expects a prior frontend build because both browser routes are
-served from built frontend HTML:
+Local startup expects a prior frontend build because the main files page and
+the embedded-browser compatibility document are served from built frontend
+HTML:
 
 ```bash
 cd frontend && npm run build
 cargo run
 ```
 
-If `assets/dist/index.html` or `assets/dist/browser.html` is missing, the
+If `assets/dist/app/index.html` or `assets/dist/app/browser.html` is missing, the
 corresponding route returns a server error with instructions to rebuild the
 frontend assets.
 
 The final runtime is:
 
-- `GET /` serves `assets/dist/index.html` after Rust access checks.
-- `GET /files/browser` serves `assets/dist/browser.html` after the same access
-  checks.
+- `GET /` serves `assets/dist/app/index.html` after Rust access checks.
+- The compatibility embedding document lives at
+  `/assets/dist/app/browser.html`.
 - Both surfaces use the shared React browser component tree rooted at
   `frontend/src/components/FileBrowser.tsx`.
 - Shell and directory data load from typed JSON APIs under `/api/v1/`.
@@ -153,9 +154,10 @@ cargo run
 ```
 
 The server listens on `http://127.0.0.1:8080` by default, serves uploaded files
-from `/upload`, and serves built frontend documents for both `GET /` and
-`GET /files/browser`. All routes are protected by the Pushkind authentication
-middleware and check that the signed-in member has the `"files"` service role.
+from `/upload`, serves the main files page at `GET /`, and exposes the
+compatibility browser document under `/assets/dist/app/browser.html`. All
+application routes are protected by the Pushkind authentication middleware and
+check that the signed-in member has the `"files"` service role.
 
 ## Quality Gates
 

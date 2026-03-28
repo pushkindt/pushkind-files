@@ -90,8 +90,8 @@ Steps:
 Implementation notes:
 - The source HTML entry should live in `frontend/`, not in `templates/`.
 - The output should be usable by Actix without a separate Node runtime.
-- Do not wire `/files/browser` yet unless the bundler requires a placeholder
-  bundle entry for shared code.
+- Do not wire the embedded browser compatibility document yet unless the
+  bundler requires a placeholder bundle entry for shared code.
 
 Acceptance checks:
 - Running `cd frontend && npm run build` creates:
@@ -217,7 +217,7 @@ Mark Phase 1 done only if all of the following are true:
 Do not do these here:
 
 - switch `GET /` to Vite-built HTML
-- migrate `/files/browser` to React
+- migrate the embedded browser compatibility surface to React
 - add `/api/v1/iam`
 - add `GET /api/v1/files/entries`
 - convert upload or folder creation responses to structured JSON

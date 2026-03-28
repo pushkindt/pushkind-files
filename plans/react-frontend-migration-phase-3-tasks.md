@@ -22,7 +22,8 @@ without yet switching live browser data loading to `/api/v1/...`.
   `GET /` is served from built frontend HTML,
   the top-level page mounts React,
   and the legacy file-browser runtime is still active.
-- Keep `/files/browser` on its current Tera route in this phase.
+- Keep the embedded browser compatibility surface on its current Tera route in
+  this phase.
 - Do not introduce the Phase 4 client data APIs yet.
 
 ## Deliverables
@@ -106,7 +107,7 @@ Steps:
 1. Add endpoint-builder helpers under `frontend/src/lib/` for browser-related
    routes.
 2. Cover at least:
-   `/files/browser`,
+   the embedded browser compatibility surface,
    `/files/upload`,
    `/folder/create`,
    file-download URLs under `/upload/*`,
@@ -167,7 +168,7 @@ Acceptance checks:
 ## Task 5: Add A Compatibility-Oriented Embedded Mount Surface
 Goal:
 prepare the React browser layer for future embedded use without cutting over the
-live `/files/browser` route yet.
+live embedded browser compatibility surface yet.
 
 Steps:
 1. Add a browser-side mount API or compatibility wrapper for the future
@@ -183,7 +184,8 @@ Steps:
    component, not a separate one-off tree.
 
 Constraints:
-- Do not cut `/files/browser` over to React in this phase.
+- Do not cut the embedded browser compatibility surface over to React in this
+  phase.
 - Do not remove `assets/filebrowser.js` yet unless an equivalent compatibility
   layer fully replaces it and Phase 6 explicitly allows the route cutover.
 
@@ -199,7 +201,8 @@ land the shared infrastructure without partially switching live browser data
 flows or route ownership.
 
 Steps:
-1. Keep `GET /files/browser` rendering the current Tera fragment.
+1. Keep the embedded browser compatibility document rendering through the
+   current Tera fragment flow.
 2. Keep the current live upload and folder-creation flows unchanged.
 3. Keep file-browser data loading out of `/api/v1/...` for now.
 4. Avoid partial cutovers where the live page mixes React-owned browser cards
@@ -221,8 +224,8 @@ Steps:
 2. Document where Bootstrap lifecycle helpers now live.
 3. Document that the shared `FileBrowser` component exists before the real
    client data APIs are introduced.
-4. Document that `/files/browser` still remains on the legacy route/runtime in
-   this phase.
+4. Document that the embedded browser compatibility surface still remains on
+   the legacy route/runtime in this phase.
 
 Minimum documentation content:
 - where the shared shell lives
@@ -250,7 +253,8 @@ What to confirm:
 - the React-owned page still loads after the refactor
 - the shared browser UI can render from typed data without Tera browser markup
 - Bootstrap lifecycle wiring still works for the migrated page
-- `/files/browser` remains on the existing route/runtime
+- the embedded browser compatibility surface remains on the existing
+  route/runtime
 
 ## Phase 3 Exit Checklist
 Mark Phase 3 done only if all of the following are true:
@@ -263,8 +267,8 @@ Mark Phase 3 done only if all of the following are true:
 - The browser layer can render from typed data without relying on Tera browser
   markup.
 - A future-facing embedded mount API or compatibility wrapper exists.
-- `/files/browser` still remains on the legacy route/runtime until a later
-  cutover phase.
+- the embedded browser compatibility surface still remains on the legacy
+  route/runtime until a later cutover phase.
 
 ## Explicit Non-Goals For This Task File
 Do not do these here:
@@ -273,7 +277,7 @@ Do not do these here:
 - add `GET /api/v1/files/entries`
 - migrate live directory loading to typed client data APIs
 - convert uploads or folder creation to structured JSON responses
-- cut `/files/browser` over to React
+- cut the embedded browser compatibility surface over to React
 - remove `assets/filebrowser.js`
 - delete Tera file-browser fragments
 - introduce client-side routing or SPA navigation
