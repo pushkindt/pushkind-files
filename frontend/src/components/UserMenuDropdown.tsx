@@ -3,22 +3,65 @@ export interface UserMenuItem {
   url: string;
 }
 
+interface UserMenuLinkItem extends UserMenuItem {
+  iconClassName: string;
+}
+
 type UserMenuDropdownProps = {
   currentUserEmail: string;
-  items: UserMenuItem[];
+  localItems: UserMenuLinkItem[];
+  remoteItems: UserMenuItem[];
   logoutAction: string;
-  homeUrl?: string;
-  homeLabel?: string;
 };
+
+const LOGOUT_ITEM_NAMES = new Set([
+  "logout",
+  "log out",
+  "sign out",
+  "signout",
+  "выйти",
+]);
+
+function isLogoutMenuItem(item: UserMenuItem) {
+  const normalizedName = item.name.trim().toLowerCase();
+  if (LOGOUT_ITEM_NAMES.has(normalizedName)) {
+    return true;
+  }
+
+  try {
+    const path = new URL(item.url, "https://pushkind.local").pathname.replace(
+      /\/+$/,
+      "",
+    );
+    return path === "/logout";
+  } catch {
+    return false;
+  }
+}
+
+function buildMenuItems(
+  localItems: UserMenuLinkItem[],
+  remoteItems: UserMenuItem[],
+): UserMenuLinkItem[] {
+  return [
+    ...localItems.filter((item) => !isLogoutMenuItem(item)),
+    ...remoteItems
+      .filter((item) => !isLogoutMenuItem(item))
+      .map((item) => ({
+        ...item,
+        iconClassName: "bi-grid",
+      })),
+  ];
+}
 
 export function UserMenuDropdown({
   currentUserEmail,
-  items,
+  localItems,
+  remoteItems,
   logoutAction,
-  homeUrl,
-  homeLabel = "Домой",
 }: UserMenuDropdownProps) {
-  const hasNavigationItems = Boolean(homeUrl) || items.length > 0;
+  const menuItems = buildMenuItems(localItems, remoteItems);
+  const hasNavigationItems = menuItems.length > 0;
 
   return (
     <div className="dropdown-center">
@@ -39,18 +82,10 @@ export function UserMenuDropdown({
             <hr className="dropdown-divider" />
           </li>
         ) : null}
-        {homeUrl ? (
-          <li>
-            <a className="dropdown-item icon-link" href={homeUrl}>
-              <i className="bi bi-house mb-2" />
-              {homeLabel}
-            </a>
-          </li>
-        ) : null}
-        {items.map((item) => (
+        {menuItems.map((item) => (
           <li key={`${item.url}-${item.name}`}>
             <a className="dropdown-item icon-link" href={item.url}>
-              <i className="bi bi-grid mb-2" />
+              <i className={`bi ${item.iconClassName} mb-2`} />
               {item.name}
             </a>
           </li>
