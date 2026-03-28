@@ -97,6 +97,16 @@ All authenticated routes are mounted under the root scope and use
   history handling.
 - The current UI remains Bootstrap-based and intentionally lightweight.
 
+## React Client Data APIs
+- React-owned files UI MUST initialize from resource-style `/api/v1/...` JSON
+  endpoints rather than page-shaped bootstrap transport.
+- The active reusable GET surface is:
+  - `GET /api/v1/iam`
+  - `GET /api/v1/files/entries?path=...`
+  - `GET /api/v1/no-access`
+- Directory data MUST remain exposed as a file-entry collection resource, not
+  as HTML fragments or page-named bootstrap payloads.
+
 ## Configuration
 - Config is loaded from `config/default.yaml`, then `config/{APP_ENV}.yaml`,
   then `APP_` environment variables.
