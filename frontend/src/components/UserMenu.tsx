@@ -8,11 +8,21 @@ export function UserMenu({
   shell: FilesShellData;
   items: UserMenuItem[];
 }) {
+  const localItems = shell.homeUrl
+    ? [
+        {
+          name: "Домой",
+          url: shell.homeUrl,
+          iconClassName: "bi-house",
+        },
+      ]
+    : [];
+
   return (
     <UserMenuDropdown
       currentUserEmail={shell.currentUser.email}
-      items={items}
-      homeUrl={shell.homeUrl}
+      localItems={localItems}
+      remoteItems={items}
       logoutAction="/logout"
     />
   );
