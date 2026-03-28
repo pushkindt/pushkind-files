@@ -3,6 +3,9 @@
 ## Status
 Accepted
 
+## Date
+2026-03-27
+
 ## Summary
 Keep file card filenames and copy-link controls aligned to the bottom edge of
 each card in the React file browser so mixed preview heights do not shift the
