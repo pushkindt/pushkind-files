@@ -24,8 +24,8 @@ and APIs remain on their current implementation.
   `assets/dist/` is configured,
   and the backend can load the Vite manifest and serve built HTML files.
 - Keep the current auth and authorization behavior for `GET /`.
-- Do not migrate `/files/browser`, uploads, folder creation, or `/api/v1/files`
-  endpoints in this phase.
+- Do not migrate the embedded browser compatibility surface, uploads, folder
+  creation, or `/api/v1/files` endpoints in this phase.
 
 ## Deliverables
 - `GET /` is served from a Vite-built HTML document after auth checks.
@@ -33,7 +33,7 @@ and APIs remain on their current implementation.
   page markup.
 - The React page shows explicit loading and fatal states for future data
   loading.
-- The current Tera fragment route at `GET /files/browser` remains intact for
+- The current Tera/browser-script compatibility flow remains intact for
   embedded use and later migration phases.
 
 ## Task 1: Cut Over `GET /` To Built HTML
@@ -58,7 +58,7 @@ Constraints:
 - Do not silently fall back to `templates/main/index.html` once this cutover is
   made.
 - Do not bypass `RedirectUnauthorized` or `SERVICE_ACCESS_ROLE`.
-- Do not change `/files/browser` in this task.
+- Do not change the embedded browser compatibility surface in this task.
 
 Acceptance checks:
 - `GET /` no longer renders `templates/main/index.html`.
@@ -109,7 +109,8 @@ Steps:
 
 Constraints:
 - Do not add `GET /api/v1/files/entries` in this phase.
-- Do not reintroduce HTML fragment fetching from `/files/browser`.
+- Do not reintroduce HTML fragment fetching in the embedded browser
+  compatibility flow.
 - Do not make the page depend on embedded JSON in the built HTML.
 
 Acceptance checks:
@@ -124,7 +125,8 @@ cut over only the top-level HTML document without partially migrating the file
 browser or embedded route.
 
 Steps:
-1. Keep `GET /files/browser` rendering the current Tera fragment.
+1. Keep the embedded browser compatibility document rendering through the
+   current Tera/browser-script flow.
 2. Keep `assets/filebrowser.js` as the active browser runtime for the current
    file-browser UI.
 3. Keep the existing upload and folder-creation endpoints and response shapes.
@@ -147,8 +149,8 @@ Steps:
    assets.
 2. Document whether `cargo run` requires `cd frontend && npm run build` before
    local startup in Phase 2.
-3. Document that `/files/browser` is still using the legacy Tera/browser-script
-   path.
+3. Document that the embedded browser compatibility surface is still using the
+   legacy Tera/browser-script path.
 4. Document that the React page shell is present, but the full browser/data API
    migration happens in later phases.
 
@@ -177,7 +179,7 @@ What to confirm:
 - the frontend build still succeeds
 - the backend still builds cleanly after route cutover
 - `GET /` can serve the built HTML document after auth checks
-- `/files/browser` remains on the existing Tera path
+- the embedded browser compatibility surface remains on the existing Tera path
 - no file-browser behavior has been partially migrated yet
 
 ## Phase 2 Exit Checklist
@@ -188,7 +190,8 @@ Mark Phase 2 done only if all of the following are true:
 - The top-level page mounts an initial React app entry.
 - The React page has explicit loading and fatal states for future bootstrap
   data loading.
-- `/files/browser` is still rendered by the existing Tera fragment route.
+- the embedded browser compatibility surface is still rendered by the existing
+  Tera fragment route.
 - `assets/filebrowser.js` is still the active runtime for the current browser
   UI.
 - `README.md` explains the new asset-build expectation for `GET /`.
@@ -196,7 +199,7 @@ Mark Phase 2 done only if all of the following are true:
 ## Explicit Non-Goals For This Task File
 Do not do these here:
 
-- migrate `/files/browser` to React
+- migrate the embedded browser compatibility surface to React
 - add shared React file-browser components
 - add `GET /api/v1/files/entries`
 - convert uploads or folder creation to structured JSON responses

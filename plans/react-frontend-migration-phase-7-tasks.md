@@ -21,7 +21,7 @@ React/Vite architecture introduced in earlier phases remains intact.
   as the source of truth.
 - Assume Phase 6 is already complete:
   `GET /` is React-backed,
-  `GET /files/browser` is React-backed,
+  the embedded browser compatibility document is React-backed,
   and the shared React browser is the active runtime for both surfaces.
 - Keep authentication, authorization, path validation, and storage persistence
   in Rust service code.
@@ -51,7 +51,8 @@ Steps:
    migration-only browser bootstrap code,
    and obsolete embedded compatibility glue.
 3. Separate active runtime dependencies from dead-but-still-checked-in files.
-4. Confirm that removing each item will not break `/` or `/files/browser`.
+4. Confirm that removing each item will not break `/` or the embedded browser
+   compatibility document.
 5. Use that inventory to drive the cleanup sequence.
 
 Acceptance checks:
@@ -64,8 +65,8 @@ eliminate server-rendered browser fragment ownership now that both routes are
 React-backed.
 
 Steps:
-1. Remove the Tera file-browser fragment(s) that previously powered
-   `/files/browser`.
+1. Remove the Tera file-browser fragment(s) that previously powered the
+   embedded browser compatibility surface.
 2. Remove route-layer rendering logic that existed only to build that fragment.
 3. Remove no-longer-needed DTOs or context wiring that only served Tera browser
    rendering.
@@ -166,7 +167,8 @@ confirm that cleanup did not break the now-final React browser runtime.
 
 Steps:
 1. Verify that `GET /` still serves the built React document.
-2. Verify that `GET /files/browser` still serves the embedded React document.
+2. Verify that the embedded browser compatibility document still serves the
+   embedded React document.
 3. Verify uploads, folder creation, previews, downloads, navigation, and
    copy-link behavior still work through the shared React browser.
 4. Verify the embedded mount contract still works without the deleted legacy
@@ -195,7 +197,8 @@ Run these commands from `pushkind-files` unless noted otherwise:
 What to confirm:
 - no runtime path depends on Tera-owned browser markup
 - no runtime path depends on `assets/filebrowser.js`
-- `/` and `/files/browser` remain React-backed and functional
+- `/` and the embedded browser compatibility document remain React-backed and
+  functional
 - cleanup removed transitional code instead of breaking live behavior
 
 ## Phase 7 Exit Checklist
