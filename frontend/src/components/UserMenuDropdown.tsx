@@ -1,16 +1,13 @@
 export interface UserMenuItem {
   name: string;
   url: string;
-}
-
-interface UserMenuLinkItem extends UserMenuItem {
-  iconClassName: string;
+  iconClass?: string;
 }
 
 type UserMenuDropdownProps = {
   currentUserEmail: string;
-  localItems: UserMenuLinkItem[];
-  remoteItems: UserMenuItem[];
+  localItems?: UserMenuItem[];
+  fetchedItems?: UserMenuItem[];
   logoutAction: string;
 };
 
@@ -22,46 +19,65 @@ const LOGOUT_ITEM_NAMES = new Set([
   "выйти",
 ]);
 
-function isLogoutMenuItem(item: UserMenuItem) {
+function normalizedPath(url: string) {
+  try {
+    return new URL(url, "https://pushkind.local").pathname.replace(/\/+$/, "");
+  } catch {
+    return undefined;
+  }
+}
+
+function menuItemIconClass(item: UserMenuItem) {
+  if (item.iconClass) {
+    return item.iconClass;
+  }
+
+  if (item.name === "Главная" || item.name === "Домой") {
+    return "bi bi-house";
+  }
+
+  if (item.name === "Профиль") {
+    return "bi bi-person";
+  }
+
+  if (item.name === "Настройки") {
+    return "bi bi-gear";
+  }
+
+  if (item.name === "Отписавшиеся") {
+    return "bi bi-person-x";
+  }
+
+  if (item.name === "История") {
+    return "bi bi-clock-history";
+  }
+
+  return "bi bi-grid";
+}
+
+function isLogoutMenuItem(item: UserMenuItem, logoutAction: string) {
   const normalizedName = item.name.trim().toLowerCase();
   if (LOGOUT_ITEM_NAMES.has(normalizedName)) {
     return true;
   }
 
-  try {
-    const path = new URL(item.url, "https://pushkind.local").pathname.replace(
-      /\/+$/,
-      "",
-    );
-    return path === "/logout";
-  } catch {
-    return false;
-  }
-}
-
-function buildMenuItems(
-  localItems: UserMenuLinkItem[],
-  remoteItems: UserMenuItem[],
-): UserMenuLinkItem[] {
-  return [
-    ...localItems.filter((item) => !isLogoutMenuItem(item)),
-    ...remoteItems
-      .filter((item) => !isLogoutMenuItem(item))
-      .map((item) => ({
-        ...item,
-        iconClassName: "bi-grid",
-      })),
-  ];
+  return normalizedPath(item.url) === normalizedPath(logoutAction);
 }
 
 export function UserMenuDropdown({
   currentUserEmail,
-  localItems,
-  remoteItems,
+  localItems = [],
+  fetchedItems = [],
   logoutAction,
 }: UserMenuDropdownProps) {
-  const menuItems = buildMenuItems(localItems, remoteItems);
-  const hasNavigationItems = menuItems.length > 0;
+  const visibleLocalItems = localItems.filter(
+    (item) => !isLogoutMenuItem(item, logoutAction),
+  );
+  const visibleFetchedItems = fetchedItems.filter(
+    (item) => !isLogoutMenuItem(item, logoutAction),
+  );
+  const hasNavigationItems =
+    visibleLocalItems.length > 0 || visibleFetchedItems.length > 0;
 
   return (
     <div className="dropdown-center">
@@ -82,10 +98,18 @@ export function UserMenuDropdown({
             <hr className="dropdown-divider" />
           </li>
         ) : null}
-        {menuItems.map((item) => (
-          <li key={`${item.url}-${item.name}`}>
+        {visibleLocalItems.map((item) => (
+          <li key={`local-${item.url}-${item.name}`}>
             <a className="dropdown-item icon-link" href={item.url}>
-              <i className={`bi ${item.iconClassName} mb-2`} />
+              <i className={`${menuItemIconClass(item)} mb-2`} />
+              {item.name}
+            </a>
+          </li>
+        ))}
+        {visibleFetchedItems.map((item) => (
+          <li key={`fetched-${item.url}-${item.name}`}>
+            <a className="dropdown-item icon-link" href={item.url}>
+              <i className={`${menuItemIconClass(item)} mb-2`} />
               {item.name}
             </a>
           </li>

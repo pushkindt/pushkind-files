@@ -51,6 +51,7 @@ export type FilesShellData = {
 export type UserMenuItem = {
   name: string;
   url: string;
+  iconClass?: string;
 };
 
 export type FileBrowserApiResponse = {
