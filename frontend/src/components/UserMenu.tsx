@@ -13,7 +13,7 @@ export function UserMenu({
         {
           name: "Домой",
           url: shell.homeUrl,
-          iconClassName: "bi-house",
+          iconClass: "bi bi-house",
         },
       ]
     : [];
@@ -22,7 +22,7 @@ export function UserMenu({
     <UserMenuDropdown
       currentUserEmail={shell.currentUser.email}
       localItems={localItems}
-      remoteItems={items}
+      fetchedItems={items}
       logoutAction="/logout"
     />
   );
