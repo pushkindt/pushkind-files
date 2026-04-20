@@ -1,7 +1,7 @@
 use pushkind_common::domain::auth::AuthenticatedUser;
+use pushkind_common::dto::shell::{CurrentUserDto, IamDto, NoAccessPageDto};
 use pushkind_common::models::config::CommonServerConfig;
 
-use crate::dto::{CurrentUserDto, FilesShellDto, NoAccessPageDto};
 use crate::models::config::AppConfig;
 use crate::services::ServiceResult;
 use crate::services::files::FileService;
@@ -10,13 +10,16 @@ pub fn get_shell_data(
     user: &AuthenticatedUser,
     common_config: &CommonServerConfig,
     app_config: &AppConfig,
-) -> ServiceResult<FilesShellDto> {
+) -> ServiceResult<IamDto> {
     let service = FileService::from_app_config(app_config);
     service.validate_browser_access(user, None)?;
 
-    Ok(FilesShellDto {
-        current_user: CurrentUserDto::from(user),
+    Ok(IamDto {
+        current_user: CurrentUserDto::from(user.clone()),
         home_url: common_config.auth_service_url.clone(),
+        navigation: Vec::new(),
+        local_menu_items: Vec::new(),
+        hub_name: "Files".to_string(),
     })
 }
 
@@ -34,8 +37,9 @@ pub fn get_no_access_data(
     common_config: &CommonServerConfig,
 ) -> NoAccessPageDto {
     NoAccessPageDto {
-        current_user: CurrentUserDto::from(user),
+        current_user: CurrentUserDto::from(user.clone()),
         home_url: common_config.auth_service_url.clone(),
+        required_role: Some(crate::SERVICE_ACCESS_ROLE.to_string()),
     }
 }
 

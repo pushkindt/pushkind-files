@@ -143,13 +143,13 @@ pub async fn spawn_app() -> TestApp {
                     .service(api_v1_no_access)
                     .service(api_v1_files_entries),
             )
+            .service(upload_files)
+            .service(create_folder)
             .service(
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
-                    .service(logout)
-                    .service(upload_files)
-                    .service(create_folder),
+                    .service(logout),
             )
             .app_data(web::Data::new(app_config.clone()))
             .app_data(web::Data::new(common_config.clone()))

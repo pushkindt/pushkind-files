@@ -1,32 +1,33 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { browserLocation, createFolder } from "./filesApi";
+import { createFolder } from "./filesApi";
 
-describe("filesApi auth redirect handling", () => {
+describe("filesApi mutations", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("navigates to the redirected auth page before mutation fallback parsing", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      redirected: true,
-      url: "https://users.pushkind.com/auth/signin?next=%2F",
-      status: 200,
-      ok: true,
-      headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
-      json: vi.fn(),
-    } as unknown as Response);
-    const assignSpy = vi
-      .spyOn(browserLocation, "assign")
-      .mockImplementation(() => undefined);
-
-    await expect(createFolder("", "", "docs")).rejects.toThrow(
-      "Сессия истекла.",
+  it("returns structured failure data for unauthorized JSON responses", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "Сессия истекла. Войдите снова и повторите действие.",
+          field_errors: [],
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
+
+    const result = await createFolder("", "", "docs");
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(assignSpy).toHaveBeenCalledWith(
-      "https://users.pushkind.com/auth/signin?next=%2F",
-    );
+    expect(result).toEqual({
+      ok: false,
+      message: "Сессия истекла. Войдите снова и повторите действие.",
+      fieldErrors: {},
+    });
   });
 });

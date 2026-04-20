@@ -7,18 +7,19 @@ type BootstrapInstance = {
 type BootstrapConstructor = new (element: Element) => BootstrapInstance;
 
 type BootstrapNamespace = {
+  Modal: {
+    getOrCreateInstance: (
+      element: string | Element,
+      options?: object,
+    ) => BootstrapInstance & { hide: () => void; show: () => void };
+  };
   Tooltip?: BootstrapConstructor;
   Popover?: BootstrapConstructor;
 };
 
-declare global {
-  interface Window {
-    bootstrap?: BootstrapNamespace;
-  }
-}
-
 export function initializeBootstrapSurface(root: ParentNode) {
-  const bootstrap = window.bootstrap;
+  const bootstrap = (window as Window & { bootstrap?: BootstrapNamespace })
+    .bootstrap;
   const disposables: BootstrapInstance[] = [];
 
   if (!bootstrap) {

@@ -65,8 +65,11 @@ export const sampleShellData: FilesShellData = {
     email: "user@example.com",
     name: "Pushkind User",
     hubId: 42,
+    roles: ["files"],
   },
   homeUrl: "https://auth.example.com",
+  navigation: [],
+  localMenuItems: [],
 };
 
 export const sampleMenuItems: UserMenuItem[] = [

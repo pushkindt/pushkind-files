@@ -1,10 +1,12 @@
 use actix_multipart::form::MultipartForm;
 use actix_web::{HttpRequest, HttpResponse, Responder, get, post, web};
 use pushkind_common::domain::auth::AuthenticatedUser;
+use pushkind_common::dto::mutation::{
+    ApiFieldErrorDto, ApiMutationErrorDto, ApiMutationSuccessDto,
+};
 use pushkind_common::routes::redirect;
 use serde::Deserialize;
 
-use crate::dto::{ApiMutationErrorDto, ApiMutationSuccessDto};
 use crate::forms::main::{CreateFolderForm, CreateFolderPayload, UploadFileForm};
 use crate::frontend::open_frontend_html;
 use crate::models::config::AppConfig;
@@ -28,12 +30,26 @@ fn mutation_success_response(status: actix_web::http::StatusCode, message: &str)
 fn mutation_error_response(
     status: actix_web::http::StatusCode,
     message: &str,
-    field_errors: Vec<crate::dto::ApiFieldErrorDto>,
+    field_errors: Vec<ApiFieldErrorDto>,
 ) -> HttpResponse {
     HttpResponse::build(status).json(ApiMutationErrorDto {
         message: message.to_string(),
         field_errors,
     })
+}
+
+fn form_error_dto(error: &crate::forms::FormError) -> ApiMutationErrorDto {
+    ApiMutationErrorDto {
+        message: "Ошибка валидации формы.".to_string(),
+        field_errors: error
+            .field_errors()
+            .into_iter()
+            .map(|error| ApiFieldErrorDto {
+                field: error.field.into_owned(),
+                message: error.message.into_owned(),
+            })
+            .collect(),
+    }
 }
 
 fn upload_response(result: Result<(), ServiceError>) -> HttpResponse {
@@ -70,9 +86,7 @@ fn create_folder_response(result: Result<(), ServiceError>) -> HttpResponse {
             actix_web::http::StatusCode::CREATED,
             "Папка успешно создана.",
         ),
-        Err(ServiceError::Form(error)) => {
-            HttpResponse::BadRequest().json(ApiMutationErrorDto::from(&error))
-        }
+        Err(ServiceError::Form(error)) => HttpResponse::BadRequest().json(form_error_dto(&error)),
         Err(ServiceError::InvalidPath) => mutation_error_response(
             actix_web::http::StatusCode::BAD_REQUEST,
             "Недопустимый путь для создания папки.",
@@ -155,7 +169,7 @@ pub async fn create_folder(
     let service = FileService::from_app_config(&app_config);
     let payload = match CreateFolderPayload::try_from(form) {
         Ok(payload) => payload,
-        Err(error) => return HttpResponse::BadRequest().json(ApiMutationErrorDto::from(&error)),
+        Err(error) => return HttpResponse::BadRequest().json(form_error_dto(&error)),
     };
 
     create_folder_response(service.create_folder(&user, params.path.as_deref(), payload))
