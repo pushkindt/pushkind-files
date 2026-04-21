@@ -495,13 +495,13 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bcrypt"
-version = "0.18.0"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a0f5948f30df5f43ac29d310b7476793be97c50787e6ef4a63d960a0d0be827"
+checksum = "523ab528ce3a7ada6597f8ccf5bd8d85ebe26d5edf311cad4d1d3cfb2d357ac6"
 dependencies = [
  "base64 0.22.1",
  "blowfish",
- "getrandom 0.3.4",
+ "getrandom 0.4.2",
  "subtle",
  "zeroize",
 ]
@@ -2066,8 +2066,9 @@ dependencies = [
 [[package]]
 name = "pushkind-common"
 version = "0.1.0"
-source = "git+https://github.com/pushkindt/pushkind-common.git?branch=main#a5a1236f66e7d83d8711afaee9424509df41c15c"
+source = "git+https://github.com/pushkindt/pushkind-common.git?branch=main#8db69a9f3e67eba0c150b6c78ec625e11656b091"
 dependencies = [
+ "actix-files",
  "actix-identity",
  "actix-web",
  "actix-web-flash-messages",

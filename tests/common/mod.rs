@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
+use std::fs;
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
+use std::sync::Once;
 use std::time::Duration;
 
 use actix_cors::Cors;
@@ -25,6 +27,8 @@ use pushkind_files::routes::aux::not_assigned;
 use pushkind_files::routes::main::{create_folder, index, upload_files};
 
 pub const HUB_ID: i32 = 42;
+
+static FRONTEND_ASSETS: Once = Once::new();
 
 pub struct TestApp {
     _upload_dir: TempDir,
@@ -97,7 +101,37 @@ async fn wait_until_server_is_ready(address: &str) {
     panic!("Test server did not become ready at {url}");
 }
 
+fn ensure_test_frontend_assets() {
+    FRONTEND_ASSETS.call_once(|| {
+        let fixtures = [
+            (
+                "assets/dist/app/index.html",
+                "<!doctype html><html><head><title>Files</title></head><body>files-page</body></html>",
+            ),
+            (
+                "assets/dist/app/no-access.html",
+                "<!doctype html><html><head><title>Files No Access</title></head><body>files-page files-no-access</body></html>",
+            ),
+        ];
+
+        for (path, contents) in fixtures {
+            let path = Path::new(path);
+            if path.exists() {
+                continue;
+            }
+
+            let parent = path
+                .parent()
+                .expect("frontend fixture path should include a parent directory");
+            fs::create_dir_all(parent).expect("failed to create frontend fixture directory");
+            fs::write(path, contents).expect("failed to write frontend fixture file");
+        }
+    });
+}
+
 pub async fn spawn_app() -> TestApp {
+    ensure_test_frontend_assets();
+
     let upload_dir = TempDir::new().expect("Failed to create upload temp dir.");
     let upload_root = upload_dir.path().join("upload");
     std::fs::create_dir_all(&upload_root).expect("Upload root should be creatable.");
@@ -143,13 +177,13 @@ pub async fn spawn_app() -> TestApp {
                     .service(api_v1_no_access)
                     .service(api_v1_files_entries),
             )
+            .service(upload_files)
+            .service(create_folder)
             .service(
                 web::scope("")
                     .wrap(RedirectUnauthorized)
                     .service(index)
-                    .service(logout)
-                    .service(upload_files)
-                    .service(create_folder),
+                    .service(logout),
             )
             .app_data(web::Data::new(app_config.clone()))
             .app_data(web::Data::new(common_config.clone()))

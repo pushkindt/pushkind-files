@@ -4,7 +4,6 @@ import { FileBrowser } from "../components/FileBrowser";
 import { FilesAppShell } from "../components/FilesAppShell";
 import { FilesPageFatalState } from "../components/FilesPageFatalState";
 import { FlashStack } from "../components/FlashStack";
-import { UserMenu } from "../components/UserMenu";
 import { bootstrapFilesPage } from "../lib/bootstrapFilesPage";
 import { isFixtureMode } from "../lib/fixtureMode";
 import {
@@ -220,7 +219,11 @@ export function FilesPageBootstrap() {
 
   return (
     <FilesAppShell
-      userMenu={<UserMenu shell={state.data.shell} items={state.data.menu} />}
+      navigation={state.data.shell.navigation}
+      currentUserEmail={state.data.shell.currentUser.email}
+      homeUrl={state.data.shell.homeUrl}
+      localMenuItems={state.data.shell.localMenuItems}
+      fetchedMenuItems={state.data.menu}
       flashes={<FlashStack />}
     >
       <FileBrowser

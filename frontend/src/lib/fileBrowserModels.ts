@@ -27,7 +27,6 @@ export type MutationFailure = {
   ok: false;
   message: string;
   fieldErrors: FieldErrors;
-  status: number;
 };
 
 export type MutationResult = MutationSuccess | MutationFailure;
@@ -39,20 +38,9 @@ export type UploadStatus = {
   message?: string;
 };
 
-export type FilesShellData = {
-  currentUser: {
-    email: string;
-    name: string;
-    hubId: number;
-  };
-  homeUrl: string;
-};
+export type FilesShellData = FrontendShellData;
 
-export type UserMenuItem = {
-  name: string;
-  url: string;
-  iconClass?: string;
-};
+export type UserMenuItem = FrontendShellUserMenuItem;
 
 export type FileBrowserApiResponse = {
   hubId: number;
@@ -85,3 +73,7 @@ export type MountFileBrowserOptions = {
   baseUrl?: string;
   historyMode?: "managed" | "disabled";
 };
+import type {
+  FrontendShellData,
+  FrontendShellUserMenuItem,
+} from "@pushkind/frontend-shell/types";

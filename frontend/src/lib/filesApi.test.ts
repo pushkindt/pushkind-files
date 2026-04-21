@@ -1,32 +1,67 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { browserLocation, createFolder } from "./filesApi";
+import { createFolder, fetchShellData } from "./filesApi";
 
-describe("filesApi auth redirect handling", () => {
+describe("filesApi mutations", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("navigates to the redirected auth page before mutation fallback parsing", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      redirected: true,
-      url: "https://users.pushkind.com/auth/signin?next=%2F",
-      status: 200,
-      ok: true,
-      headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
-      json: vi.fn(),
-    } as unknown as Response);
-    const assignSpy = vi
-      .spyOn(browserLocation, "assign")
-      .mockImplementation(() => undefined);
-
-    await expect(createFolder("", "", "docs")).rejects.toThrow(
-      "Сессия истекла.",
+  it("returns structured failure data for unauthorized JSON responses", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "Сессия истекла. Войдите снова и повторите действие.",
+          field_errors: [],
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
+
+    const result = await createFolder("", "", "docs");
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(assignSpy).toHaveBeenCalledWith(
-      "https://users.pushkind.com/auth/signin?next=%2F",
+    expect(result).toEqual({
+      ok: false,
+      message: "Сессия истекла. Войдите снова и повторите действие.",
+      fieldErrors: {},
+    });
+  });
+
+  it("loads shell data from the regular IAM endpoint", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          current_user: {
+            email: "blocked@example.com",
+            name: "Blocked User",
+            hub_id: 42,
+            roles: [],
+          },
+          home_url: "https://auth.example.com",
+          navigation: [],
+          local_menu_items: [],
+          hub_name: "Files",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
+
+    const shell = await fetchShellData("");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/iam", {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      credentials: "include",
+    });
+    expect(shell.currentUser.email).toBe("blocked@example.com");
   });
 });

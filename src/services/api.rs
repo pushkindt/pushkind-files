@@ -1,7 +1,7 @@
 use pushkind_common::domain::auth::AuthenticatedUser;
+use pushkind_common::dto::shell::{CurrentUserDto, IamDto, NoAccessPageDto};
 use pushkind_common::models::config::CommonServerConfig;
 
-use crate::dto::{CurrentUserDto, FilesShellDto, NoAccessPageDto};
 use crate::models::config::AppConfig;
 use crate::services::ServiceResult;
 use crate::services::files::FileService;
@@ -9,14 +9,13 @@ use crate::services::files::FileService;
 pub fn get_shell_data(
     user: &AuthenticatedUser,
     common_config: &CommonServerConfig,
-    app_config: &AppConfig,
-) -> ServiceResult<FilesShellDto> {
-    let service = FileService::from_app_config(app_config);
-    service.validate_browser_access(user, None)?;
-
-    Ok(FilesShellDto {
-        current_user: CurrentUserDto::from(user),
+) -> ServiceResult<IamDto> {
+    Ok(IamDto {
+        current_user: CurrentUserDto::from(user.clone()),
         home_url: common_config.auth_service_url.clone(),
+        navigation: Vec::new(),
+        local_menu_items: Vec::new(),
+        hub_name: "Files".to_string(),
     })
 }
 
@@ -34,8 +33,9 @@ pub fn get_no_access_data(
     common_config: &CommonServerConfig,
 ) -> NoAccessPageDto {
     NoAccessPageDto {
-        current_user: CurrentUserDto::from(user),
+        current_user: CurrentUserDto::from(user.clone()),
         home_url: common_config.auth_service_url.clone(),
+        required_role: Some(crate::SERVICE_ACCESS_ROLE.to_string()),
     }
 }
 
@@ -81,23 +81,17 @@ mod tests {
 
     #[test]
     fn shell_data_returns_context() {
-        let response = get_shell_data(
-            &test_user(),
-            &common_config(),
-            &app_config("./upload".into()),
-        );
+        let response = get_shell_data(&test_user(), &common_config());
         assert!(response.is_ok());
     }
 
     #[test]
-    fn shell_data_rejects_missing_role() {
-        let response = get_shell_data(
-            &unauthorized_user(),
-            &common_config(),
-            &app_config("./upload".into()),
-        );
+    fn shell_data_keeps_working_without_files_role() {
+        let response = get_shell_data(&unauthorized_user(), &common_config())
+            .expect("shell data should still succeed");
 
-        assert!(matches!(response, Err(ServiceError::Unauthorized)));
+        assert_eq!(response.navigation, Vec::new());
+        assert_eq!(response.local_menu_items, Vec::new());
     }
 
     #[test]

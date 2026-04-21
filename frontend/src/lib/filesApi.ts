@@ -1,3 +1,16 @@
+import type { ApiMutationError } from "@pushkind/frontend-shell/mutations";
+import {
+  isApiMutationError,
+  postForm,
+  postMultipartForm,
+} from "@pushkind/frontend-shell/mutations";
+import {
+  ensureResponseIsNotAuthRedirect,
+  fetchHubMenuItems as fetchSharedHubMenuItems,
+  fetchNoAccessData as fetchSharedNoAccessData,
+  fetchShellData as fetchSharedShellData,
+  readJsonResponse,
+} from "@pushkind/frontend-shell/shellApi";
 import type {
   FileBrowserApiResponse,
   FileBrowserEntry,
@@ -61,8 +74,14 @@ function readNumber(record: Record<string, unknown>, key: string) {
 
 async function fetchJson(url: string) {
   const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
     credentials: "include",
   });
+
+  ensureResponseIsNotAuthRedirect(response);
 
   if (!response.ok) {
     if (response.status === 400) {
@@ -74,27 +93,7 @@ async function fetchJson(url: string) {
     throw new Error(`Request failed with status ${response.status}.`);
   }
 
-  return response.json();
-}
-
-export const browserLocation = {
-  assign(url: string) {
-    window.location.assign(url);
-  },
-};
-
-async function readResponseJson(response: Response) {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
-    return null;
-  }
-
-  return response.json();
-}
-
-function handleAuthRedirectResponse(response: Response): never {
-  browserLocation.assign(response.url);
-  throw new Error("Сессия истекла. Выполняется переход на страницу входа.");
+  return readJsonResponse(response, url);
 }
 
 function parseFieldErrors(payload: unknown): FieldErrors {
@@ -120,72 +119,32 @@ function parseFieldErrors(payload: unknown): FieldErrors {
   return result;
 }
 
-function parseMutationPayload(payload: unknown) {
-  if (!isRecord(payload)) {
-    return {
-      message: "Произошла ошибка при обработке запроса.",
-      fieldErrors: {} as FieldErrors,
-    };
-  }
-
-  return {
-    message:
-      readOptionalString(payload, "message") ??
-      "Произошла ошибка при обработке запроса.",
-    fieldErrors: parseFieldErrors(payload.field_errors),
-  };
-}
-
 async function performMutation(
-  url: string,
-  init: RequestInit,
+  request: () => Promise<{ message: string }>,
 ): Promise<MutationResult> {
-  const response = await fetch(url, {
-    ...init,
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(init.headers ?? {}),
-    },
-  });
-
-  if (response.redirected) {
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("application/json")) {
-      handleAuthRedirectResponse(response);
-    }
-  }
-
-  const payload = parseMutationPayload(await readResponseJson(response));
-
-  if (response.ok) {
+  try {
+    const payload = await request();
     return {
       ok: true,
       message: payload.message,
     };
+  } catch (error) {
+    const payload: ApiMutationError = isApiMutationError(error)
+      ? error
+      : {
+          message:
+            error instanceof Error
+              ? error.message
+              : "Произошла ошибка при обработке запроса.",
+          field_errors: [],
+        };
+
+    return {
+      ok: false,
+      message: payload.message,
+      fieldErrors: parseFieldErrors(payload.field_errors),
+    };
   }
-
-  return {
-    ok: false,
-    message: payload.message,
-    fieldErrors: payload.fieldErrors,
-    status: response.status,
-  };
-}
-
-function parseShellData(payload: unknown): FilesShellData {
-  if (!isRecord(payload) || !isRecord(payload.current_user)) {
-    throw new Error("Invalid shell payload.");
-  }
-
-  return {
-    currentUser: {
-      email: readString(payload.current_user, "email"),
-      name: readString(payload.current_user, "name"),
-      hubId: readNumber(payload.current_user, "hub_id"),
-    },
-    homeUrl: readString(payload, "home_url"),
-  };
 }
 
 function parseBrowserEntry(entry: unknown, baseUrl: string): FileBrowserEntry {
@@ -226,26 +185,11 @@ function parseBrowserData(
   };
 }
 
-function parseMenuItems(payload: unknown): UserMenuItem[] {
-  if (!Array.isArray(payload)) {
-    throw new Error("Invalid menu payload.");
-  }
-
-  return payload.map((item) => {
-    if (!isRecord(item)) {
-      throw new Error("Invalid menu item payload.");
-    }
-
-    return {
-      name: readString(item, "name"),
-      url: readString(item, "url"),
-    };
-  });
-}
-
 export async function fetchShellData(baseUrl: string): Promise<FilesShellData> {
-  const payload = await fetchJson(buildIamApiUrl(baseUrl));
-  return parseShellData(payload);
+  return fetchSharedShellData<FilesShellData>(
+    buildIamApiUrl(baseUrl),
+    "Недостаточно прав для доступа к файлам.",
+  );
 }
 
 export async function fetchFileBrowserData(
@@ -260,10 +204,17 @@ export async function fetchHubMenuItems(
   authBaseUrl: string,
   hubId: number,
 ): Promise<UserMenuItem[]> {
-  const payload = await fetchJson(
+  return fetchSharedHubMenuItems<UserMenuItem>(
     withBaseUrl(authBaseUrl, `/api/v1/hubs/${hubId}/menu-items`),
+    "Не удалось загрузить меню пользователя.",
   );
-  return parseMenuItems(payload);
+}
+
+export async function fetchNoAccessData(baseUrl: string) {
+  return fetchSharedNoAccessData(
+    withBaseUrl(baseUrl, "/api/v1/no-access"),
+    "Не удалось загрузить страницу доступа.",
+  );
 }
 
 export async function bootstrapFilesPage(
@@ -303,10 +254,9 @@ export async function uploadFile(
   const body = new FormData();
   body.append("file", file);
 
-  return performMutation(buildUploadUrl(baseUrl, path), {
-    method: "POST",
-    body,
-  });
+  return performMutation(() =>
+    postMultipartForm(buildUploadUrl(baseUrl, path), body),
+  );
 }
 
 export async function createFolder(
@@ -317,11 +267,7 @@ export async function createFolder(
   const body = new URLSearchParams();
   body.set("name", name);
 
-  return performMutation(buildCreateFolderUrl(baseUrl, path), {
-    method: "POST",
-    body,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-  });
+  return performMutation(() =>
+    postForm(buildCreateFolderUrl(baseUrl, path), body),
+  );
 }

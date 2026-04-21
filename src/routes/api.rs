@@ -17,11 +17,9 @@ pub struct EntriesQueryParams {
 pub async fn api_v1_iam(
     user: AuthenticatedUser,
     common_config: web::Data<CommonServerConfig>,
-    app_config: web::Data<AppConfig>,
 ) -> HttpResponse {
-    match api_service::get_shell_data(&user, &common_config, &app_config) {
+    match api_service::get_shell_data(&user, &common_config) {
         Ok(shell) => HttpResponse::Ok().json(shell),
-        Err(ServiceError::Unauthorized) => HttpResponse::Unauthorized().finish(),
         Err(error) => {
             error!("Failed to build shell context: {error:?}");
             HttpResponse::InternalServerError().finish()

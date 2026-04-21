@@ -1,17 +1,27 @@
 import type { ReactNode } from "react";
+import { ServiceNavbar } from "@pushkind/frontend-shell/ServiceNavbar";
 
 import { useBootstrapSurface } from "../lib/bootstrap";
+import type { FilesShellData, UserMenuItem } from "../lib/fileBrowserModels";
 
 type FilesAppShellProps = {
   children: ReactNode;
-  userMenu?: ReactNode;
+  navigation: FilesShellData["navigation"];
+  currentUserEmail: string;
+  homeUrl: string;
+  localMenuItems: FilesShellData["localMenuItems"];
+  fetchedMenuItems: UserMenuItem[];
   banner?: ReactNode;
   flashes?: ReactNode;
 };
 
 export function FilesAppShell({
   children,
-  userMenu,
+  navigation,
+  currentUserEmail,
+  homeUrl,
+  localMenuItems,
+  fetchedMenuItems,
   banner,
   flashes,
 }: FilesAppShellProps) {
@@ -20,33 +30,16 @@ export function FilesAppShell({
   return (
     <div ref={shellRef} className="files-page-shell">
       {flashes}
-      <div className="container">
-        <nav className="navbar navbar-expand-sm bg-body-tertiary">
-          <div className="container-fluid">
-            <a className="navbar-brand" href="/">
-              Files
-            </a>
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span className="navbar-toggler-icon" />
-            </button>
-            <div
-              className="collapse navbar-collapse"
-              id="navbarSupportedContent"
-            >
-              <ul className="navbar-nav me-auto" />
-            </div>
-            {userMenu}
-          </div>
-        </nav>
-      </div>
+      <ServiceNavbar
+        brand="Files"
+        collapseId="filesNavbar"
+        navigation={navigation}
+        currentUserEmail={currentUserEmail}
+        homeUrl={homeUrl}
+        localMenuItems={localMenuItems}
+        fetchedMenuItems={fetchedMenuItems}
+        logoutAction="/logout"
+      />
       {banner}
       {children}
     </div>
