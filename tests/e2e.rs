@@ -21,7 +21,6 @@ fn form_body(fields: &[(&str, &str)]) -> String {
         .join("&")
 }
 
-#[ignore = "local-only end-to-end test"]
 #[actix_web::test]
 async fn test_files_member_full_management_story() {
     let app = common::spawn_app().await;
@@ -220,7 +219,6 @@ async fn test_files_member_full_management_story() {
     assert_eq!(invalid_upload_response.status(), StatusCode::BAD_REQUEST);
 }
 
-#[ignore = "local-only end-to-end test"]
 #[actix_web::test]
 async fn test_logged_out_and_no_role_access_stories() {
     let app = common::spawn_app().await;
@@ -282,7 +280,12 @@ async fn test_logged_out_and_no_role_access_stories() {
         .await
         .expect("Failed to request IAM payload without role.");
 
-    assert_eq!(denied_iam_response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(denied_iam_response.status(), StatusCode::OK);
+    let denied_iam_payload = response_json(denied_iam_response).await;
+    assert_eq!(
+        denied_iam_payload["current_user"]["email"],
+        "blocked@example.com"
+    );
 
     let denied_entries_response = client
         .get(format!("{}/api/v1/files/entries", app.address()))

@@ -9,11 +9,7 @@ use crate::services::files::FileService;
 pub fn get_shell_data(
     user: &AuthenticatedUser,
     common_config: &CommonServerConfig,
-    app_config: &AppConfig,
 ) -> ServiceResult<IamDto> {
-    let service = FileService::from_app_config(app_config);
-    service.validate_browser_access(user, None)?;
-
     Ok(IamDto {
         current_user: CurrentUserDto::from(user.clone()),
         home_url: common_config.auth_service_url.clone(),
@@ -85,23 +81,17 @@ mod tests {
 
     #[test]
     fn shell_data_returns_context() {
-        let response = get_shell_data(
-            &test_user(),
-            &common_config(),
-            &app_config("./upload".into()),
-        );
+        let response = get_shell_data(&test_user(), &common_config());
         assert!(response.is_ok());
     }
 
     #[test]
-    fn shell_data_rejects_missing_role() {
-        let response = get_shell_data(
-            &unauthorized_user(),
-            &common_config(),
-            &app_config("./upload".into()),
-        );
+    fn shell_data_keeps_working_without_files_role() {
+        let response = get_shell_data(&unauthorized_user(), &common_config())
+            .expect("shell data should still succeed");
 
-        assert!(matches!(response, Err(ServiceError::Unauthorized)));
+        assert_eq!(response.navigation, Vec::new());
+        assert_eq!(response.local_menu_items, Vec::new());
     }
 
     #[test]
